@@ -1,0 +1,31 @@
+{% extends "layouts/base.html" %}{% block title %}Lớp học{% endblock %}{% block crumb %}Lớp học{% endblock %}
+{% block content %}
+<div class="grid g3" id="grid"></div>
+<div class="card" id="detail" style="display:none;margin-top:16px"><h3 id="dt"></h3><div class="tblwrap" style="border:0"><table style="min-width:0"><tbody id="lst"></tbody></table></div></div>
+{% endblock %}{% block js %}
+<script>
+async function load(){
+  grid.innerHTML = `<div class="card"><div class="skel">&nbsp;</div></div>`.repeat(3);
+  const cls = await api("/api/classes");
+  grid.innerHTML = cls.map(c=>`<div class="card" style="cursor:pointer" onclick="detail('${c.name}')">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2>${c.name}</h2><span class="badge b-blue">${c.count} học sinh</span></div>
+    <div class="small muted">GVCN: ${c.homeroom||"—"} · Phòng ${c.room||"—"}</div>
+    <div style="margin-top:10px"><div class="small muted">Attendance: <b>${c.rate}%</b></div>
+    <div style="background:var(--bg);border-radius:99px;height:8px;margin-top:4px">
+      <div style="width:${c.rate}%;height:8px;border-radius:99px;background:var(--primary)"></div></div></div>
+  </div>`).join("");
+}
+async function detail(name){
+  const d = await api("/api/classes/"+name);
+  document.getElementById("detail").style.display = "block";
+  dt.textContent = `Lớp ${name} — ${d.students.length} học sinh (GVCN: ${d.class.homeroom||"—"})`;
+  lst.innerHTML = d.students.map(s=>`<tr><td><div class="cell-main">${avatarHTML(s.full_name,"#2563eb")}
+    <div><b><a href="/hoc-sinh/${s.code}">${s.full_name}</a></b><div class="small muted">${s.code}</div></div></div></td>
+    <td>${s.face_registered?'<span class="badge b-green">Đã ĐK</span>':'<span class="badge b-red">Chưa ĐK</span>'}</td></tr>`).join("");
+  detail.scrollIntoView({behavior:"smooth"});
+}
+const grid=document.getElementById("grid"),dt=document.getElementById("dt"),lst=document.getElementById("lst"),detail=document.getElementById("detail");
+load();
+</script>
+{% endblock %}

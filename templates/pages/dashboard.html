@@ -1,0 +1,63 @@
+{% extends "layouts/base.html" %}{% block title %}Dashboard{% endblock %}{% block crumb %}Dashboard{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <input type="date" id="d" value="{{ today }}" style="max-width:190px">
+  <select id="range" style="max-width:170px"><option value="7">7 ngày</option><option value="30">30 ngày</option></select>
+  <button class="btn" onclick="load()">Xem</button>
+</div>
+<div class="grid g4" id="kpi"></div>
+<div class="grid g3" style="margin-top:16px;grid-template-columns:2fr 1fr">
+  <div class="card"><h3>Attendance Overview <span class="muted small" id="ovSub"></span></h3><canvas id="cLine" height="120"></canvas></div>
+  <div class="card"><h3>Attendance Rate</h3><canvas id="cDonut" height="150"></canvas>
+    <div style="text-align:center;font-size:26px;font-weight:800" id="rateTxt"></div></div>
+</div>
+<div class="grid g2" style="margin-top:16px">
+  <div class="card"><h3>Class Attendance</h3><canvas id="cBar" height="130"></canvas></div>
+  <div class="card"><h3>Recent Attendance</h3><div class="tblwrap" style="border:0"><table style="min-width:0">
+    <tbody id="recent"></tbody></table></div></div>
+</div>
+{% endblock %}{% block js %}
+<script>
+let L, D, B;
+async function load(){
+  const day = document.getElementById("d").value;
+  const days = +document.getElementById("range").value;
+  recent.innerHTML = skeletonRows(4);
+  const s = await api(`/api/dashboard?date=${day}&days=${days}`);
+  const arrow = up => up ? '<span class="delta-up">↑</span>' : '<span class="delta-down">↓</span>';
+  const kc = (label, val, ic, bg, extra="") => `<div class="card stat-card">
+    <div class="stat-ic" style="background:${bg}">${ic}</div>
+    <div><div class="muted small">${label}</div><div class="stat-v">${val}</div><div class="small">${extra}</div></div></div>`;
+  kpi.innerHTML =
+    kc("Tổng học sinh", s.total, "🎓", "var(--primary-soft)") +
+    kc("Có mặt hôm nay", s.present, "✅", "var(--green-soft)", `${arrow(s.up)} ${s.delta_present}% so với hôm qua`) +
+    kc("Đi trễ", s.late, "⏰", "var(--amber-soft)") +
+    kc("Vắng", s.absent, "⛔", "var(--red-soft)", `<span class="muted">Tỷ lệ chuyên cần ${s.rate}%</span>`);
+  ovSub.textContent = `· ${days} ngày gần nhất`;
+  if (L) L.destroy();
+  L = new Chart(cLine, {type:"line", data:{labels:s.chart.map(x=>x.date), datasets:[
+    {label:"Có mặt", data:s.chart.map(x=>x.present), tension:.35},
+    {label:"Đi trễ", data:s.chart.map(x=>x.late), tension:.35},
+    {label:"Vắng", data:s.chart.map(x=>x.absent), tension:.35}]},
+    options:{plugins:{legend:{position:"bottom"}}, scales:{y:{beginAtZero:true}}}});
+  if (D) D.destroy();
+  rateTxt.textContent = s.rate + "%";
+  D = new Chart(cDonut, {type:"doughnut",
+    data:{labels:["Chuyên cần","Còn lại"], datasets:[{data:[s.rate, 100-s.rate]}]},
+    options:{cutout:"70%", plugins:{legend:{display:false}}}});
+  if (B) B.destroy();
+  B = new Chart(cBar, {type:"bar",
+    data:{labels:s.by_class.map(x=>x.lop), datasets:[{label:"Có mặt", data:s.by_class.map(x=>x.comat||0)},{label:"Đi trễ", data:s.by_class.map(x=>x.ditre||0)}]},
+    options:{plugins:{legend:{position:"bottom"}}, scales:{y:{beginAtZero:true}}}});
+  recent.innerHTML = s.recent.map(r=>`<tr><td><div class="cell-main">${avatarHTML(r.full_name,"#2563eb")}
+    <div><b>${r.full_name}</b><div class="small muted">${r.class_name}</div></div></div></td>
+    <td>${r.time||""}</td><td>${statusBadge(r.status)}</td></tr>`).join("")
+    || emptyHTML("Chưa có dữ liệu điểm danh", "Thử đổi ngày khác.");
+}
+const kpi=document.getElementById("kpi"),recent=document.getElementById("recent"),
+      cLine=document.getElementById("cLine"),cDonut=document.getElementById("cDonut"),
+      cBar=document.getElementById("cBar"),rateTxt=document.getElementById("rateTxt"),
+      ovSub=document.getElementById("ovSub");
+load();
+</script>
+{% endblock %}

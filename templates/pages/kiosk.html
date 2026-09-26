@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Điểm danh khuôn mặt · {{ school_name }}</title>
+<style>
+:root{--bg:#eef3fa;--card:#fff;--text:#0f1e33;--muted:#64748b;--border:#e2e9f4;--primary:#2563eb;--primary2:#1d4ed8;--accent:#7c3aed;--primary-soft:#e8effd;--green:#16a34a;--green2:#0d9668;--green-soft:#e2f7ec;--amber:#d97706;--amber-soft:#fdf3e3;--r:18px;--shadow:0 1px 2px rgba(16,24,40,.06),0 8px 24px rgba(37,99,235,.10)}
+[data-theme=dark]{--bg:#0a1020;--card:#121b31;--text:#e7eefb;--muted:#8ea0bf;--border:#22304d;--primary:#3b82f6;--primary2:#60a5fa;--primary-soft:#16294d;--green-soft:#123527;--amber-soft:#3a2a12}
+*{box-sizing:border-box}body{margin:0;color:var(--text);font-family:"Segoe UI",Roboto,Arial,sans-serif;font-size:15px;overflow-x:clip;
+background:radial-gradient(600px 300px at 10% 0%,rgba(37,99,235,.10),transparent),radial-gradient(500px 260px at 95% 10%,rgba(124,58,237,.10),transparent),var(--bg)}
+.header{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 22px;background:var(--card);border-bottom:1px solid var(--border)}
+.header::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:linear-gradient(90deg,var(--primary),var(--accent),transparent)}
+.logo{display:flex;gap:10px;align-items:center;font-weight:800;font-size:19px}
+.logo-mark{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(37,99,235,.4)}
+.content{padding:22px;max-width:1100px;margin:0 auto}
+.grid{display:grid;gap:16px}.g2{grid-template-columns:1.4fr 1fr}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;box-shadow:var(--shadow);animation:rise .35s ease}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+h3{margin-top:0}.muted{color:var(--muted)}.small{font-size:12.5px}
+.badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600}
+.b-green{background:var(--green-soft);color:var(--green)}.b-amber{background:var(--amber-soft);color:var(--amber)}
+.avatar{width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px}
+.cell-main{display:flex;gap:10px;align-items:center}
+.btn{background:linear-gradient(135deg,var(--green),var(--green2));color:#fff;border:0;border-radius:12px;padding:10px 20px;font-weight:700;cursor:pointer;font-family:inherit;font-size:14px;box-shadow:0 4px 14px rgba(22,163,74,.35)}
+.btn.ghost{background:var(--card);color:var(--text);border:1px solid var(--border);box-shadow:none}
+.hbtn{display:inline-block;border:1px solid var(--primary);color:var(--primary);background:var(--primary-soft);border-radius:10px;padding:8px 16px;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit;text-decoration:none}
+button.hbtn{appearance:none}
+input,select{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:9px 12px;font:inherit}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap}.toolbar input,.toolbar select{flex:1;min-width:140px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}td{padding:10px;border-bottom:1px solid var(--border)}
+.cam{position:relative;border-radius:var(--r);overflow:hidden;background:#0b0f1a;aspect-ratio:4/3}
+.cam video{width:100%;height:100%;object-fit:cover;display:block}
+.corners{position:absolute;inset:9%;pointer-events:none}
+.corners i{position:absolute;width:34px;height:34px;border:3px solid #4ade80;filter:drop-shadow(0 0 6px #4ade80)}
+.corners .tl{top:0;left:0;border-right:0;border-bottom:0;border-radius:10px 0 0 0}
+.corners .tr{top:0;right:0;border-left:0;border-bottom:0;border-radius:0 10px 0 0}
+.corners .bl{bottom:0;left:0;border-right:0;border-top:0;border-radius:0 0 0 10px}
+.corners .br{bottom:0;right:0;border-left:0;border-top:0;border-radius:0 0 10px 0}
+.scanline{position:absolute;left:10%;right:10%;height:3px;border-radius:99px;background:linear-gradient(90deg,transparent,#4ade80,transparent);box-shadow:0 0 16px #4ade80;animation:scan 2.2s ease-in-out infinite}
+@keyframes scan{0%,100%{top:12%}50%{top:86%}}
+.hint{position:absolute;bottom:10px;left:0;right:0;text-align:center;color:#fff;font-size:13px;text-shadow:0 1px 4px #000}
+#overlay{position:absolute;inset:0;width:100%;height:100%}
+.camerr{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:#fff;background:rgba(0,0,0,.6);font-size:13px;padding:24px;text-align:center}
+.spin{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:sp 1s linear infinite;margin:10px auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:36px;color:var(--muted)}
+.pop{animation:pop .4s ease}@keyframes pop{0%{transform:scale(.9);opacity:0}60%{transform:scale(1.03)}}
+#sessStat{display:inline-block;background:var(--primary-soft);color:var(--primary);font-weight:600;border-radius:99px;padding:6px 14px;margin-top:8px}
+@media(max-width:900px){.g2{grid-template-columns:1fr}.content{padding:14px}}
+</style>
+</head>
+<body>
+<div class="header">
+<div class="logo"><span class="logo-mark">◉</span> FaceAttend <span class="muted small">{{ today }} · {{ school_name }}</span></div>
+<div><a href="/login" class="hbtn">Giáo viên</a> <button class="hbtn" onclick="toggleTheme()">Dark/Light</button></div>
+</div>
+<div class="content">
+<div class="card" style="margin-bottom:16px"><div class="toolbar">
+<select id="cls">{% for c in classes %}<option>{{ c }}</option>{% endfor %}{% if not classes %}<option value="">(chưa có lớp)</option>{% endif %}</select>
+<select id="period">{% for p in periods %}<option value="{{ p.period }}">Tiết {{ p.period }} · {{ p.start_time }}</option>{% endfor %}</select>
+</div><span id="sessStat"></span></div>
+<div class="grid g2">
+<div class="card"><h3>Camera <span class="muted small" id="camState">· chưa bật</span></h3>
+<div class="cam"><video id="cam" autoplay muted playsinline></video>
+<div class="scanline" id="scan" style="display:none"></div>
+<div class="corners"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
+<div class="hint">Đưa khuôn mặt vào khung</div><canvas id="overlay"></canvas><div class="camerr" id="camErr" style="display:none"></div></div>
+<div style="margin-top:12px"><button class="btn" id="btnToggle" style="width:100%" onclick="toggleScan()">Bắt đầu điểm danh</button></div>
+</div>
+<div class="card"><h3>Kết quả</h3><div id="result" class="muted">Bấm “Bắt đầu điểm danh” và nhìn vào camera.</div></div>
+</div>
+<div class="card" style="margin-top:16px"><h3>Đã điểm danh (<span id="sessN">0</span>)</h3>
+<table><tbody id="sessList"></tbody></table></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script>
+const MODEL_URL="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights";
+document.documentElement.dataset.theme=localStorage.getItem("fa-theme")||"dark";
+function toggleTheme(){const t=document.documentElement.dataset.theme==="light"?"dark":"light";document.documentElement.dataset.theme=t;localStorage.setItem("fa-theme",t);}
+async function api(url, method, body){
+  const r = await fetch(url, {method: method||"GET", headers:{"Content-Type":"application/json"}, body: body?JSON.stringify(body):null});
+  return r.json();
+}
+let stream=null, timer=null, scanning=false, matcher=null, realMode=false, nameMap={}, on=false;
+async function toggleScan(){if(on){stopCam();}else{await startCam();}}
+async function startCam(){camErr.style.display="none";
+  try{stream=await navigator.mediaDevices.getUserMedia({video:true});cam.srcObject=stream;await cam.play().catch(()=>{});}
+  catch(e){camErr.textContent="Không mở được camera ("+e.message+"). Hãy bấm Cho phép khi trình duyệt hỏi.";camErr.style.display="flex";return;}
+  camState.textContent="· đang quét";scan.style.display="block";sizeOverlay();
+  on=true;btnToggle.textContent="Dừng quét";
+  if(window.faceapi){await initReal();}else{realMode=false;}
+  clearInterval(timer);timer=setInterval(doScan,2500);doScan();}
+function stopCam(){clearInterval(timer);if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;camState.textContent="· đã tắt";scan.style.display="none";
+  on=false;btnToggle.textContent="Bắt đầu điểm danh";
+  overlay.getContext("2d").clearRect(0,0,overlay.width,overlay.height);}
+function sizeOverlay(){overlay.width=cam.videoWidth||640;overlay.height=cam.videoHeight||480;}
+async function initReal(){
+  try{
+    result.innerHTML=`<div class="empty"><div class="spin"></div>Đang tải model nhận diện (lần đầu hơi lâu)...</div>`;
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+    result.innerHTML=`<div class="empty"><div class="spin"></div>Đang nạp dữ liệu khuôn mặt...</div>`;
+    const list=await api("/api/kiosk/faces");
+    nameMap=Object.fromEntries(list.map(s=>[s.code,s]));
+    const labeled=[];let bad=0;
+    for(const s of list){
+      try{const img=await faceapi.fetchImage("/static/"+s.photo);
+        const d=await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
+        if(d)labeled.push(new faceapi.LabeledFaceDescriptors(s.code,[d.descriptor]));else bad++;
+      }catch(e){bad++;}
+    }
+    if(!labeled.length){realMode=false;
+      result.innerHTML=`<div class="empty">📷<br><b>Chưa có ảnh khuôn mặt dùng được</b><div class="small">Nhờ giáo viên thêm học sinh kèm ảnh rõ mặt.</div></div>`;return;}
+    matcher=new faceapi.FaceMatcher(labeled,0.5);realMode=true;
+    result.innerHTML=`<div class="empty">Sẵn sàng. Đưa khuôn mặt vào khung.<div class="small">${labeled.length} khuôn mặt đã nạp${bad?` · ${bad} ảnh lỗi`:""}</div></div>`;
+  }catch(e){realMode=false;}
+}
+async function doScan(){
+  if(scanning)return;scanning=true;
+  try{if(realMode&&matcher)await doScanReal();else await doScanMock();}finally{scanning=false;}
+  loadSession();}
+async function doScanReal(){
+  const det=await faceapi.detectSingleFace(cam,new faceapi.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:0.5})).withFaceLandmarks().withFaceDescriptor();
+  drawBox(det);
+  if(!det){result.innerHTML=`<div class="empty">Đưa khuôn mặt vào khung...</div>`;return;}
+  const m=matcher.findBestMatch(det.descriptor);
+  if(m.label==="unknown"||m.distance>0.5){
+    result.innerHTML=`<div class="empty">🔍<br><b>Không nhận diện được</b><div class="small">Khuôn mặt chưa được đăng ký.</div></div>`;return;}
+  const s=nameMap[m.label];
+  const c=await api("/api/attendance/checkin","POST",{student_code:s.code,date:"{{ today }}",period:+period.value,subject:"",method:"face"});
+  result.innerHTML=c.ok
+    ?`<div class="pop" style="text-align:center"><img src="/static/${s.photo}" style="width:84px;height:84px;border-radius:50%;object-fit:cover;border:4px solid var(--green-soft)"><div style="font-weight:800;font-size:19px;margin-top:8px">Xin chào, ${c.full_name}!</div><div class="muted small">${s.code} · ${c.class_name}</div><div style="margin-top:8px"><span class="badge ${c.status==="Có mặt"?"b-green":"b-amber"}">${c.status}</span> <span class="badge b-green">Điểm danh thành công lúc ${c.time}</span></div></div>`
+    :`<div class="empty"><b>${c.msg}</b><div class="small">${c.detail||""}</div></div>`;
+}
+function drawBox(det){
+  const ctx=overlay.getContext("2d");ctx.clearRect(0,0,overlay.width,overlay.height);
+  if(!det)return;
+  const b=det.detection.box,sx=overlay.width/(cam.videoWidth||640),sy=overlay.height/(cam.videoHeight||480);
+  ctx.strokeStyle="#4ade80";ctx.lineWidth=3;
+  ctx.strokeRect(b.x*sx,b.y*sy,b.width*sx,b.height*sy);
+}
+async function doScanMock(){
+  const r = await api("/api/face/recognize_mock","POST",{date:"{{ today }}",period:+period.value});
+  if(!r.ok){result.innerHTML=`<div class="empty"><b>${r.msg}</b><div class="small">Nhờ giáo viên đăng ký khuôn mặt trước.</div></div>`;loadSession();return;}
+  const c = await api("/api/attendance/checkin","POST",{student_code:r.student_code,date:"{{ today }}",period:+period.value,subject:"",method:"face"});
+  result.innerHTML = c.ok
+    ? `<div class="pop" style="text-align:center"><div style="font-size:52px">✅</div><div style="font-weight:800;font-size:19px">Xin chào, ${c.full_name}!</div><div class="muted small">${r.student_code} · ${c.class_name}</div><div style="margin-top:8px"><span class="badge ${c.status==="Có mặt"?"b-green":"b-amber"}">${c.status}</span> <span class="badge b-green">Điểm danh thành công lúc ${c.time}</span></div></div>`
+    : `<div class="empty"><b>${c.msg}</b><div class="small">${c.detail||""}</div></div>`;
+  loadSession();}
+async function loadSession(){
+  const s = await api(`/api/attendance/session?date={{ today }}&period=${period.value}`);
+  sessN.textContent=s.checked;
+  sessStat.textContent=`Lớp ${cls.value||"—"} · Tiết ${period.value} · Đã điểm danh ${s.checked}/${s.total} học sinh`;
+  sessList.innerHTML=s.records.map(x=>`<tr><td><b>${x.full_name}</b><div class="small muted">${x.student_code} · ${x.class_name}</div></td><td>${x.time||""}</td><td>${x.status}</td></tr>`).join("")||`<tr><td><div class="empty">📭<br><b>Chưa có lượt điểm danh</b></div></td></tr>`;}
+const cam=document.getElementById("cam"),camState=document.getElementById("camState"),scan=document.getElementById("scan"),
+camErr=document.getElementById("camErr"),result=document.getElementById("result"),sessN=document.getElementById("sessN"),
+sessList=document.getElementById("sessList"),cls=document.getElementById("cls"),
+period=document.getElementById("period"),sessStat=document.getElementById("sessStat"),
+overlay=document.getElementById("overlay"),btnToggle=document.getElementById("btnToggle");
+period.onchange=loadSession;loadSession();
+</script>
+</body>
+</html>

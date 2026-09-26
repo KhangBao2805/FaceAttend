@@ -1,0 +1,33 @@
+{% extends "base.html" %}{% block title %}Thời khóa biểu{% endblock %}{% block content %}
+<h2>📅 Thời khóa biểu (T2 → T7)</h2>
+<div class="card"><table><thead><tr><th>Thứ</th><th>Tiết</th><th>Môn</th><th>Giáo viên</th><th>Phòng</th><th>Giờ</th><th></th></tr></thead>
+<tbody id="tb"></tbody></table></div>
+{% if user.role=='admin' %}
+<div class="card" style="margin-top:14px"><h3>Thêm tiết học</h3>
+<div class="grid g3">
+<select id="wd"><option value="0">Thứ 2</option><option value="1">Thứ 3</option><option value="2">Thứ 4</option><option value="3">Thứ 5</option><option value="4">Thứ 6</option><option value="5">Thứ 7</option></select>
+<select id="pe"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option></select>
+<input id="sj" placeholder="Môn học"></div>
+<div class="grid g3" style="margin-top:8px"><input id="gv" placeholder="Giáo viên"><input id="rm" placeholder="Phòng"><input id="st" placeholder="07:00-07:45"></div>
+<button class="btn" style="margin-top:10px" onclick="add()">Thêm</button></div>
+{% endif %}
+{% endblock %}{% block js %}
+<script>
+const DOW=["Thứ 2","Thứ 3","Thứ 4","Thứ 5","Thứ 6","Thứ 7"];
+async function load(){
+  const list = await api("/api/schedule");
+  tb.innerHTML = list.map(r=>`<tr><td>${DOW[r.weekday]||r.weekday}</td><td>${r.period}</td><td><b>${r.subject}</b></td>
+    <td>${r.teacher||""}</td><td>${r.room||""}</td><td>${r.start_time||""}–${r.end_time||""}</td>
+    <td>${"{{ user.role }}"==="admin"?`<button class="btn red" onclick="del(${r.id})">Xóa</button>`:""}</td></tr>`).join("");
+}
+async function add(){
+  const [stt,ett]=(st.value||"-").split("-");
+  const r = await api("/api/schedule","POST",{weekday:+wd.value,period:+pe.value,subject:sj.value,teacher:gv.value,room:rm.value,start_time:(stt||"").trim(),end_time:(ett||"").trim()});
+  toast(r.ok?"Đã thêm.":"Lỗi"); load();
+}
+async function del(id){ if(!confirm("Xóa tiết này?"))return; await api("/api/schedule/"+id,"DELETE"); load(); }
+const tb=document.getElementById("tb");
+{% if user.role=='admin' %}const wd=document.getElementById("wd"),pe=document.getElementById("pe"),sj=document.getElementById("sj"),gv=document.getElementById("gv"),rm=document.getElementById("rm"),st=document.getElementById("st");{% endif %}
+load();
+</script>
+{% endblock %}

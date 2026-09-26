@@ -1,0 +1,31 @@
+{% extends "layouts/base.html" %}{% block title %}Tài khoản{% endblock %}{% block crumb %}Tài khoản{% endblock %}
+{% block content %}
+<div class="toolbar"><button class="btn" onclick="showAdd()">+ Tạo tài khoản</button></div>
+<div class="tblwrap"><table><thead><tr><th>Tài khoản</th><th>Email</th><th>Vai trò</th><th>Liên kết HS</th></tr></thead><tbody id="tb"></tbody></table></div>
+{% endblock %}{% block js %}
+<script>
+const roleB = r => r==="admin"?'<span class="badge b-red">Admin</span>':r==="teacher"?'<span class="badge b-blue">Teacher</span>':'<span class="badge b-green">Student</span>';
+async function load(){
+  tb.innerHTML = skeletonRows(3);
+  const l = await api("/api/users");
+  tb.innerHTML = l.map(u=>`<tr><td><div class="cell-main">${avatarHTML(u.full_name||u.username,"#2563eb")}
+    <div><b>${u.username}</b><div class="small muted">${u.full_name||""}</div></div></div></td>
+    <td>${u.email||""}</td><td>${roleB(u.role)}</td><td>${u.linked_student_code||"—"}</td></tr>`).join("");
+}
+function showAdd(){
+  openModal(`<h3>Tạo tài khoản</h3><div class="grid g2">
+    <input id="m_u" placeholder="Tên đăng nhập"><input id="m_e" placeholder="Email">
+    <input id="m_p" placeholder="Mật khẩu"><select id="m_r"><option value="teacher">Giáo viên</option><option value="admin">Admin</option><option value="student">Học sinh</option></select>
+    <input id="m_fn" placeholder="Họ tên"><input id="m_lk" placeholder="Mã HS (nếu student)"></div>
+    <div style="display:grid;gap:8px;margin-top:12px">
+    <button class="btn" onclick="add()">Tạo</button><button class="btn ghost" onclick="closeModal()">Hủy</button></div>`);
+}
+async function add(){
+  const g=id=>document.getElementById(id).value;
+  const r = await api("/api/users","POST",{username:g("m_u"),email:g("m_e"),password:g("m_p"),role:g("m_r"),full_name:g("m_fn"),linked_student_code:g("m_lk")});
+  toast(r.ok?"Đã tạo.":(r.msg||"Lỗi"), r.ok?"success":"error");
+  if(r.ok){closeModal();load();}
+}
+const tb=document.getElementById("tb"); load();
+</script>
+{% endblock %}

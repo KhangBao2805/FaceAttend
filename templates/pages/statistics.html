@@ -1,0 +1,44 @@
+{% extends "layouts/base.html" %}{% block title %}Thống kê{% endblock %}{% block crumb %}Thống kê{% endblock %}
+{% block content %}
+<div class="toolbar"><input type="date" id="d" value="{{ today }}" style="max-width:180px">
+<select id="days" style="max-width:170px"><option value="7">7 ngày</option><option value="30" selected>30 ngày</option></select>
+<button class="btn" onclick="load()">Xem</button></div>
+<div class="grid g4" id="kpi"></div>
+<div id="notice"></div>
+<div class="grid g2" style="margin-top:16px">
+  <div class="card"><h3>Chuyên cần theo ngày</h3><canvas id="c1" height="130"></canvas></div>
+  <div class="card"><h3>Theo lớp (tích lũy)</h3><div class="tblwrap" style="border:0"><table style="min-width:0"><tbody id="tb"></tbody></table></div></div>
+</div>
+<div class="card" style="margin-top:16px"><h3>Top đi trễ</h3><div class="tblwrap" style="border:0"><table style="min-width:0"><tbody id="top"></tbody></table></div></div>
+{% endblock %}{% block js %}
+<script>
+let C;
+async function load(){
+  try{
+  const s = await api(`/api/statistics?date=${d.value}&days=${days.value}`);
+  notice.innerHTML = s.tong_luot ? "" : `<div class="card" style="margin-top:16px;border-left:4px solid var(--primary)">📭 <b>Chưa có dữ liệu điểm danh.</b> <span class="muted">Thêm học sinh và quét điểm danh ở trang Máy quét, số liệu sẽ hiện tại đây.</span></div>`;
+  kpi.innerHTML = `<div class="card"><div class="muted small">Attendance Rate</div><div class="stat-v">${s.ti_le_di_hoc}%</div></div>
+   <div class="card"><div class="muted small">Late Rate</div><div class="stat-v">${s.ti_le_di_tre}%</div></div>
+   <div class="card"><div class="muted small">Leave Rate</div><div class="stat-v">${s.ti_le_co_phep}%</div></div>
+   <div class="card"><div class="muted small">Tổng lượt</div><div class="stat-v">${s.tong_luot}</div></div>`;
+  if (C) C.destroy();
+  if(!window.Chart){c1.parentElement.innerHTML+="<p class='muted'>Không tải được thư viện biểu đồ (mất mạng).</p>";}
+  else C = new Chart(c1, {type:"line", data:{labels:s.overview.map(x=>x.date), datasets:[
+    {label:"Có mặt", data:s.overview.map(x=>x.present), tension:.35},
+    {label:"Đi trễ", data:s.overview.map(x=>x.late), tension:.35}]},
+    options:{plugins:{legend:{position:"bottom"}}, scales:{y:{beginAtZero:true}}}});
+  tb.innerHTML = s.theo_lop.map(r=>`<tr><td><b>${r.lop}</b></td><td>${r.tong} lượt</td>
+    <td>✅ ${r.comat||0}</td><td>⏰ ${r.ditre||0}</td></tr>`).join("")
+    || `<tr><td>${emptyHTML("Chưa có dữ liệu","")}</td></tr>`;
+  top.innerHTML = s.top_late.map((r,i)=>`<tr><td>#${i+1}</td>
+    <td><div class="cell-main">${avatarHTML(r.full_name,"#d97706")}<div><b>${r.full_name}</b><div class="small muted">${r.code} · ${r.class_name}</div></div></div></td>
+    <td><span class="badge b-amber">${r.n} lần trễ</span></td></tr>`).join("")
+    || `<tr><td colspan="3">${emptyHTML("Không có dữ liệu trễ","")}</td></tr>`;
+  }catch(e){notice.innerHTML=`<div class="card" style="margin-top:16px;border-left:4px solid var(--red)">⚠️ Không tải được số liệu. Bấm Xem để thử lại.</div>`;}
+}
+const kpi=document.getElementById("kpi"),c1=document.getElementById("c1"),
+      tb=document.getElementById("tb"),top=document.getElementById("top"),notice=document.getElementById("notice"),
+      d=document.getElementById("d"),days=document.getElementById("days");
+load();
+</script>
+{% endblock %}

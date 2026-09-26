@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>{% block title %}Dashboard{% endblock %} · FaceAttend</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/design.css') }}?v=4">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="logo"><span class="logo-mark">◉</span> FaceAttend</div>
+    <nav class="nav">
+      <div class="sec">Chính</div>
+      <a href="/dashboard" class="{% if active=='dashboard' %}active{% endif %}"><span class="ic">🏠</span> Dashboard</a>
+      <a href="/them-hoc-sinh" class="{% if active=='add_student' %}active{% endif %}"><span class="ic">➕</span> Thêm học sinh</a>
+      <a href="/thoi-khoa-bieu" class="{% if active=='schedule' %}active{% endif %}"><span class="ic">📅</span> Thời khóa biểu</a>
+      <a href="/lich-su" class="{% if active=='history' %}active{% endif %}"><span class="ic">📝</span> Lịch sử</a>
+      <a href="/thong-ke" class="{% if active=='stats' %}active{% endif %}"><span class="ic">📊</span> Thống kê</a>
+      <div class="sec">Hệ thống</div>
+      {% if user.role=='admin' %}
+      <a href="/tai-khoan" class="{% if active=='accounts' %}active{% endif %}"><span class="ic">👤</span> Tài khoản</a>
+      <a href="/cai-dat" class="{% if active=='settings' %}active{% endif %}"><span class="ic">⚙️</span> Cài đặt</a>
+      {% endif %}
+      <a href="/"><span class="ic">🖥️</span> Máy quét điểm danh</a>
+      <a href="/logout"><span class="ic">🚪</span> Đăng xuất</a>
+    </nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="iconbtn" onclick="toggleSidebar()" title="Thu gọn menu">☰</button>
+        <div><div class="crumb">FaceAttend / <b>{% block crumb %}Dashboard{% endblock %}</b></div>
+        <div class="small muted">{{ today }} · {{ school_name }}</div></div>
+      </div>
+      <div class="hact">
+        <div style="position:relative">
+          <button class="iconbtn" id="bellBtn" onclick="toggleNotif(event)" title="Thông báo">🔔<span class="dot" id="notifDot" style="display:none">0</span></button>
+          <div class="dropdown" id="notifDrop" style="display:none"><div id="notifList"></div></div>
+        </div>
+        <button class="iconbtn" onclick="toggleTheme()" title="Dark/Light">🌗</button>
+        <span id="hdrAvatar"></span>
+      </div>
+    </header>
+    <div class="content">{% block content %}{% endblock %}</div>
+  </div>
+</div>
+<nav class="bottomnav">
+  <a href="/dashboard" class="{% if active=='dashboard' %}active{% endif %}"><span class="ic">🏠</span>Home</a>
+  <a href="/" ><span class="ic">📷</span>Quét</a>
+  <a href="/them-hoc-sinh" class="{% if active=='add_student' %}active{% endif %}"><span class="ic">➕</span>Thêm</a>
+  <a href="/lich-su" class="{% if active=='history' %}active{% endif %}"><span class="ic">📝</span>Lịch sử</a>
+  <a href="/thong-ke" class="{% if active=='stats' %}active{% endif %}"><span class="ic">📊</span>TK</a>
+</nav>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script>
+document.getElementById("hdrAvatar").innerHTML =
+  avatarHTML("{{ user.name }}", "#2563eb");
+async function loadNotif(){
+  try{
+    const n = await api("/api/notifications");
+    const d = document.getElementById("notifDot");
+    d.style.display = n.unread ? "flex" : "none"; d.textContent = n.unread;
+    document.getElementById("notifList").innerHTML =
+      `<div class="item"><b>🔔 Thông báo</b> <a href="#" onclick="readAll(event)" class="small" style="float:right">Đánh dấu đã đọc</a></div>` +
+      (n.items.map(i=>`<div class="item ${i.is_read?"":"unread"}"><b>${i.title}</b><div class="small muted">${i.body||""} · ${i.created_at||""}</div></div>`).join("") || emptyHTML("Chưa có thông báo",""));
+  }catch(e){}
+}
+function toggleNotif(e){ e.stopPropagation();
+  const d = document.getElementById("notifDrop");
+  d.style.display = d.style.display === "none" ? "block" : "none";
+  if (d.style.display === "block") loadNotif();
+}
+async function readAll(e){ e.preventDefault(); await api("/api/notifications/read","POST",{}); loadNotif(); }
+document.addEventListener("click", e => {
+  if (!e.target.closest("#notifDrop") && !e.target.closest("#bellBtn"))
+    document.getElementById("notifDrop").style.display = "none";
+});
+loadNotif(); setInterval(loadNotif, 60000);
+</script>
+{% block js %}{% endblock %}
+</body>
+</html>

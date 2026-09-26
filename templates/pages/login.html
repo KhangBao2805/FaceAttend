@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Đăng nhập · FaceAttend</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/design.css') }}">
+<style>
+.login-wrap{min-height:100vh;display:grid;grid-template-columns:1fr 1fr}
+.login-left{background:#0f1e33;color:#fff;padding:48px;display:flex;flex-direction:column;justify-content:center;gap:14px}
+.login-left .feat{background:rgba(255,255,255,.08);border-radius:12px;padding:12px 14px;font-size:13.5px}
+.login-right{display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg)}
+.login-box{width:380px;max-width:100%}
+@media(max-width:820px){.login-wrap{grid-template-columns:1fr}.login-left{display:none}}
+</style></head>
+<body>
+<div class="login-wrap">
+  <div class="login-left">
+    <div style="display:flex;align-items:center;gap:10px;font-size:20px;font-weight:800"><span class="logo-mark">◉</span> FaceAttend</div>
+    <h1 style="font-size:30px;line-height:1.25;margin:6px 0">Điểm danh khuôn mặt<br>cho trường THPT hiện đại.</h1>
+    <div class="feat">📷 Camera + nhận diện khuôn mặt, chống điểm danh trùng</div>
+    <div class="feat">📊 Dashboard, thống kê chuyên cần theo lớp / ngày / tháng</div>
+    <div class="feat">🔒 Dữ liệu sinh trắc học được bảo vệ, phân quyền Admin / Giáo viên / Học sinh</div>
+  </div>
+  <div class="login-right"><div class="login-box">
+    <h2>Đăng nhập</h2><p class="muted">Chào mừng trở lại FaceAttend.</p>
+    {% if err %}<div class="card" style="border-left:4px solid var(--red);margin-bottom:12px">{{ err }}</div>{% endif %}
+    <form method="post" class="card" style="display:grid;gap:10px">
+      <label class="small muted">Email / Tên đăng nhập<input name="username" required placeholder="admin"></label>
+      <label class="small muted">Mật khẩu<input name="password" type="password" required placeholder="••••••••"></label>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <label class="small"><input type="checkbox" name="remember" style="width:auto"> Ghi nhớ tôi</label>
+        <a href="#" class="small" onclick="forgot(event)" style="color:var(--primary)">Quên mật khẩu?</a>
+      </div>
+      <button class="btn">Đăng nhập →</button>
+      <div class="small muted">Liên hệ quản trị viên để được cấp tài khoản.</div>
+    </form>
+  </div></div>
+</div>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script>
+async function forgot(e){ e.preventDefault();
+  const r = await api("/api/forgot","POST",{});
+  toast(r.msg, "success");
+}
+</script>
+</body></html>

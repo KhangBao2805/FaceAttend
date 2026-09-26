@@ -1,0 +1,38 @@
+{% extends "base.html" %}{% block title %}Đăng ký khuôn mặt{% endblock %}{% block content %}
+<h2>🖐️ Đăng ký khuôn mặt</h2>
+<div class="grid g2">
+<div class="card"><h3>Bước 1–3: Nhập thông tin</h3>
+<input id="code" placeholder="Mã học sinh (VD: HS021)">
+<input id="name" placeholder="Họ tên" style="margin-top:8px">
+<select id="cls" style="margin-top:8px"><option>12A1</option><option>12A2</option><option>11A1</option></select>
+<label class="muted" style="display:block;margin-top:10px">
+<input type="checkbox" id="consent" style="width:auto"> Tôi / phụ huynh <b>đồng ý</b> thu thập dữ liệu khuôn mặt để điểm danh.
+Chỉ dùng cho điểm danh, được quyền xóa bất cứ lúc nào.</label></div>
+<div class="card"><h3>Bước 4–7: Nhìn vào camera</h3>
+<p class="muted">👀 Nhìn thẳng • đủ sáng • bỏ khẩu trang/kính râm • giữ đầu thẳng, cách camera 40–60cm.</p>
+<video id="cam" autoplay muted playsinline></video>
+<div class="toolbar" style="margin-top:10px">
+<button class="btn ghost" onclick="openCam()">📷 Mở camera</button>
+<button class="btn" onclick="register()">✅ Tạo dữ liệu & Lưu</button></div>
+<p id="msg" class="muted"></p></div></div>
+{% endblock %}{% block js %}
+<script>
+let stream=null;
+async function openCam(){
+  try{ stream = await navigator.mediaDevices.getUserMedia({video:true});
+    document.getElementById("cam").srcObject = stream; toast("Camera đã mở."); }
+  catch(e){ toast("Không mở được camera: "+e.message); }
+}
+async function register(){
+  const code = document.getElementById("code").value.trim().toUpperCase();
+  const consent = document.getElementById("consent").checked;
+  if (!code) return toast("Nhập mã học sinh trước.");
+  if (!consent) return toast("Cần tick ĐỒNG Ý trước khi lưu dữ liệu khuôn mặt.");
+  // Demo: tạo embedding giả lập từ mã HS. Bản thật: trích xuất từ ảnh camera.
+  const emb = mockEmbedding(code);
+  const r = await api("/api/face/register", "POST", {student_code:code, embedding:emb, consent:true});
+  document.getElementById("msg").textContent = r.msg;
+  toast(r.msg);
+}
+</script>
+{% endblock %}

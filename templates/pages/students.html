@@ -1,0 +1,65 @@
+{% extends "layouts/base.html" %}{% block title %}Học sinh{% endblock %}{% block crumb %}Học sinh{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <input id="q" placeholder="Tìm theo tên hoặc mã học sinh..." oninput="load()">
+  <select id="fclass" onchange="load()"><option value="">Tất cả lớp</option><option>12A1</option><option>12A2</option><option>12A3</option></select>
+  <select id="fface" onchange="load()"><option value="">Mọi trạng thái ĐK</option><option value="yes">Đã ĐK khuôn mặt</option><option value="no">Chưa ĐK</option></select>
+  <button class="btn" onclick="showAdd()">+ Thêm học sinh</button>
+</div>
+<div class="tblwrap"><table><thead><tr><th>Học sinh</th><th>Mã HS</th><th>Lớp</th><th>Khuôn mặt</th><th>Hôm nay</th><th style="text-align:right">Action</th></tr></thead>
+<tbody id="tb"></tbody></table></div>
+{% endblock %}{% block js %}
+<script>
+async function load(){
+  tb.innerHTML = skeletonRows(5);
+  const list = await api(`/api/students?q=${encodeURIComponent(q.value)}&class=${fclass.value}&face=${fface.value}`);
+  tb.innerHTML = list.map(s=>`<tr>
+    <td><div class="cell-main">${avatarHTML(s.full_name, s.avatar_color)}
+      <div><b><a href="/hoc-sinh/${s.code}">${s.full_name}</a></b><div class="small muted">${s.gender||""}</div></div></div></td>
+    <td><b>${s.code}</b></td><td>${s.class_name}</td>
+    <td>${s.face_registered?'<span class="badge b-green">Đã ĐK</span>':'<span class="badge b-red">Chưa ĐK</span>'}</td>
+    <td>${statusBadge(s.today_status)}</td>
+    <td style="text-align:right;white-space:nowrap">
+      <button class="btn soft sm" onclick="location.href='/hoc-sinh/${s.code}'">View</button>
+      <button class="btn ghost sm" onclick='edit(${JSON.stringify(s).replace(/'/g,"&#39;")})'>Edit</button>
+      <button class="btn ghost sm" onclick="location.href='/dang-ky-khuon-mat?code=${s.code}'">Face</button>
+      <button class="btn red sm" onclick="del('${s.code}')">Del</button></td></tr>`).join("")
+    || `<tr><td colspan="6">${emptyHTML("Không tìm thấy học sinh","Thử thay đổi từ khóa hoặc bộ lọc.")}</td></tr>`;
+}
+let editCode = null;
+function showAdd(){ editCode = null;
+  openModal(`<h3>+ Thêm học sinh</h3><div class="grid g2">
+    <input id="m_code" placeholder="Mã HS (HS031)"><input id="m_name" placeholder="Họ tên">
+    <select id="m_cls"><option>12A1</option><option>12A2</option><option>12A3</option></select>
+    <select id="m_gender"><option>Nam</option><option>Nữ</option></select>
+    <input id="m_dob" type="date"><input id="m_email" placeholder="Email">
+    <input id="m_phone" placeholder="SĐT phụ huynh"><input id="m_enroll" type="date"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+    <button class="btn ghost" onclick="closeModal()">Hủy</button>
+    <button class="btn" onclick="save()">Lưu</button></div>`);
+}
+function edit(s){ editCode = s.code;
+  openModal(`<h3>Sửa ${s.code}</h3><div class="grid g2">
+    <input id="m_name" value="${s.full_name||""}" placeholder="Họ tên">
+    <select id="m_cls"><option ${s.class_name=="12A1"?"selected":""}>12A1</option><option ${s.class_name=="12A2"?"selected":""}>12A2</option><option ${s.class_name=="12A3"?"selected":""}>12A3</option></select>
+    <input id="m_dob" type="date" value="${s.dob||""}"><input id="m_email" value="${s.email||""}" placeholder="Email">
+    <input id="m_phone" value="${s.parent_phone||s.phone||""}" placeholder="SĐT phụ huynh"><input id="m_enroll" type="date" value="${s.enroll_date||""}"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+    <button class="btn ghost" onclick="closeModal()">Hủy</button>
+    <button class="btn" onclick="save()">Lưu</button></div>`);
+}
+async function save(){
+  const g = id => document.getElementById(id)?.value || "";
+  const d = {full_name:g("m_name"), class_name:g("m_cls"), grade:"12", dob:g("m_dob"),
+             gender:"", email:g("m_email"), parent_phone:g("m_phone"), enroll_date:g("m_enroll")};
+  let r;
+  if (editCode) r = await api("/api/students/"+editCode, "PUT", d);
+  else { d.code = g("m_code").trim().toUpperCase(); r = await api("/api/students","POST",d); }
+  toast(r.ok ? "Đã lưu." : (r.msg||"Lỗi"), r.ok?"success":"error");
+  if (r.ok){ closeModal(); load(); }
+}
+function del(c){ confirmModal("Xóa học sinh", `Xóa <b>${c}</b> cùng toàn bộ điểm danh và dữ liệu khuôn mặt?`, async()=>{ await api("/api/students/"+c,"DELETE"); load(); }); }
+const tb=document.getElementById("tb"),q=document.getElementById("q"),fclass=document.getElementById("fclass"),fface=document.getElementById("fface");
+load();
+</script>
+{% endblock %}

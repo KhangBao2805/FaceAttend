@@ -1,0 +1,21 @@
+{% extends "layouts/base.html" %}{% block title %}Cài đặt{% endblock %}{% block crumb %}Cài đặt{% endblock %}
+{% block content %}
+<div class="card"><h3>Giờ các tiết học</h3>
+<div class="tblwrap" style="border:0"><table style="min-width:0"><thead><tr><th>Tiết</th><th>Giờ vào</th><th>Giờ ra</th><th>Buổi</th></tr></thead><tbody>
+{% for p in periods %}<tr><td><b>{{ p.period }}</b> · {{ p.label }}</td>
+<td><input data-p="{{ p.period }}" data-f="start_time" value="{{ p.start_time }}"></td>
+<td><input data-p="{{ p.period }}" data-f="end_time" value="{{ p.end_time }}"></td>
+<td><input data-p="{{ p.period }}" data-f="session" value="{{ p.session }}"></td></tr>{% endfor %}
+</tbody></table></div>
+<button class="btn" style="margin-top:10px" onclick="save()">💾 Lưu giờ học</button>
+<p class="small muted">Trễ quá 5 phút → Đi trễ. Vắng = không có bản ghi điểm danh.</p></div>
+{% endblock %}{% block js %}
+<script>
+async function save(){
+  const rows=[...document.querySelectorAll("input[data-p]")];
+  const by={}; rows.forEach(i=>{(by[i.dataset.p]=by[i.dataset.p]||{period:+i.dataset.p})[i.dataset.f]=i.value;});
+  const r=await api("/api/periods","POST",Object.values(by));
+  toast(r.ok?"Đã lưu giờ học.":"Lỗi", r.ok?"success":"error");
+}
+</script>
+{% endblock %}

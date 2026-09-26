@@ -1,0 +1,59 @@
+{% extends "layouts/base.html" %}{% block title %}Đăng ký khuôn mặt{% endblock %}{% block crumb %}Đăng ký khuôn mặt{% endblock %}
+{% block content %}
+<div class="grid g2">
+  <div class="card"><h3>Bước <span id="stepN">1</span>/3 — Thông tin học sinh</h3>
+    <div class="steps"><i class="on" id="s1"></i><i id="s2"></i><i id="s3"></i></div>
+    <div id="step1">
+      <input id="code" placeholder="Mã học sinh (HS031)" value="{{ request.args.get('code','') }}">
+      <input id="name" placeholder="Họ tên" style="margin-top:8px">
+      <select id="cls" style="margin-top:8px"><option>12A1</option><option>12A2</option><option>12A3</option></select>
+      <label class="small muted" style="display:block;margin-top:10px"><input type="checkbox" id="consent" style="width:auto">
+        Tôi / phụ huynh <b>đồng ý</b> thu thập dữ liệu khuôn mặt để điểm danh. Chỉ dùng cho điểm danh, được quyền xóa bất cứ lúc nào.</label>
+      <button class="btn" style="margin-top:10px" onclick="goStep2()">Tiếp tục →</button>
+    </div>
+    <div id="step2" style="display:none">
+      <p class="muted">👀 Nhìn thẳng • đủ sáng • bỏ khẩu trang/kính râm • giữ mặt trong khung, cách camera 40–60cm.</p>
+      <div class="cam"><video id="cam" muted playsinline></video>
+        <div class="overlay"><div class="face-frame"></div></div><div class="hint">Giữ khuôn mặt trong khung</div></div>
+      <div class="toolbar" style="margin-top:10px">
+        <button class="btn ghost" onclick="openCam()">📷 Mở camera</button>
+        <button class="btn" onclick="capture()">📸 Chụp & Tạo dữ liệu</button></div>
+    </div>
+    <div id="step3" style="display:none"><div id="done"></div></div>
+  </div>
+  <div class="card"><h3>Quyền riêng tư</h3>
+    <p class="small muted">• Camera chỉ bật khi bạn bấm nút và cho phép trình duyệt.<br>
+    • Không lưu ảnh công khai, chỉ lưu vector embedding + cờ đồng ý.<br>
+    • Không lưu dữ liệu nhạy cảm ở localStorage.<br>
+    • Có thể xóa dữ liệu khuôn mặt bất cứ lúc nào.</p></div>
+</div>
+{% endblock %}{% block js %}
+<script>
+let emb = null;
+function goStep2(){
+  if (!code.value.trim()) return toast("Nhập mã học sinh.", "error");
+  if (!consent.checked) return toast("Cần tick ĐỒNG Ý trước.", "error");
+  step1.style.display="none"; step2.style.display="block"; stepN.textContent="2";
+  s2.classList.add("on");
+}
+async function openCam(){
+  try{ await CameraScanner.start(cam); toast("Camera đã mở."); }
+  catch(e){ toast("Không mở được camera: "+e.message, "error"); }
+}
+async function capture(){
+  // Demo: sinh embedding từ mã HS. Bản thật: trích từ ảnh camera + detectFace().
+  emb = mockEmbedding(code.value.trim().toUpperCase());
+  const r = await api("/api/face/register","POST",{student_code:code.value.trim().toUpperCase(), embedding:emb, consent:true});
+  step2.style.display="none"; step3.style.display="block"; stepN.textContent="3"; s3.classList.add("on");
+  done.innerHTML = r.ok
+    ? `<div class="empty"><div class="big">✅</div><b>Đăng ký khuôn mặt thành công.</b><div class="small">${code.value.trim().toUpperCase()} đã có thể điểm danh bằng camera.</div>
+       <div style="margin-top:10px"><button class="btn" onclick="location.href='/diem-danh'">→ Đến trang điểm danh</button></div></div>`
+    : `<div class="empty"><div class="big">⚠️</div><b>${r.msg}</b></div>`;
+  CameraScanner.stop();
+}
+const code=document.getElementById("code"),name=document.getElementById("name"),cls=document.getElementById("cls"),
+      consent=document.getElementById("consent"),cam=document.getElementById("cam"),
+      step1=document.getElementById("step1"),step2=document.getElementById("step2"),step3=document.getElementById("step3"),
+      stepN=document.getElementById("stepN"),s2=document.getElementById("s2"),s3=document.getElementById("s3"),done=document.getElementById("done");
+</script>
+{% endblock %}

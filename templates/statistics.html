@@ -1,0 +1,21 @@
+{% extends "base.html" %}{% block title %}Thống kê{% endblock %}{% block content %}
+<h2>📊 Thống kê chuyên cần</h2>
+<div class="grid g4" id="kpi"></div>
+<div class="grid g2" style="margin-top:16px">
+<div class="card"><h3>Tỷ lệ (%)</h3><canvas id="c1" height="160"></canvas></div>
+<div class="card"><h3>Theo lớp</h3><table><thead><tr><th>Lớp</th><th>Tổng lượt</th><th>Có mặt</th><th>Đi trễ</th></tr></thead><tbody id="tb"></tbody></table></div>
+</div>
+{% endblock %}{% block js %}
+<script>
+(async()=>{
+  const s = await api("/api/statistics");
+  kpi.innerHTML = `<div class="card"><div class=muted>Tỷ lệ đi học</div><div class=stat>${s.ti_le_di_hoc}%</div></div>
+   <div class="card"><div class=muted>Đi trễ</div><div class=stat>${s.ti_le_di_tre}%</div></div>
+   <div class="card"><div class=muted>Có phép</div><div class=stat>${s.ti_le_co_phep}%</div></div>
+   <div class="card"><div class=muted>Tổng lượt</div><div class=stat>${s.tong_luot}</div></div>`;
+  new Chart(c1,{type:"doughnut",data:{labels:["Đi học","Đi trễ","Có phép"],
+    datasets:[{data:[s.ti_le_di_hoc,s.ti_le_di_tre,s.ti_le_co_phep]}]}});
+  tb.innerHTML = s.theo_lop.map(r=>`<tr><td><b>${r.lop}</b></td><td>${r.tong}</td><td>${r.comat||0}</td><td>${r.ditre||0}</td></tr>`).join("");
+})();
+</script>
+{% endblock %}

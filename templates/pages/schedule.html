@@ -1,0 +1,46 @@
+{% extends "layouts/base.html" %}{% block title %}Thời khóa biểu{% endblock %}{% block crumb %}Thời khóa biểu{% endblock %}
+{% block content %}
+<div class="toolbar"><select id="fcls" style="max-width:180px"><option>12A1</option><option>12A2</option><option>12A3</option></select>
+{% if user.role=='admin' %}<button class="btn" onclick="showAdd()">+ Thêm tiết</button>{% endif %}</div>
+<div class="tblwrap"><table><thead><tr><th>Tiết</th><th>Thứ 2</th><th>Thứ 3</th><th>Thứ 4</th><th>Thứ 5</th><th>Thứ 6</th><th>Thứ 7</th></tr></thead>
+<tbody id="tb"></tbody></table></div>
+{% endblock %}{% block js %}
+<script>
+const COLORS = {"Toán":"#2563eb","Ngữ Văn":"#7c3aed","Tiếng Anh":"#0891b2","Vật Lý":"#ea580c","Hóa Học":"#16a34a","Tin Học":"#4f46e5"};
+async function load(){
+  tb.innerHTML = skeletonRows(5);
+  const all = await api("/api/schedule");
+  const list = all.filter(r=>r.class_name===fcls.value);
+  let html = "";
+  for (let p=1;p<=5;p++){
+    html += `<tr><td><b>Tiết ${p}</b></td>`;
+    for (let w=0;w<6;w++){
+      const c = list.find(r=>r.weekday===w&&r.period===p);
+      html += `<td>${c?`<div style="border-left:4px solid ${COLORS[c.subject]||"#2563eb"};background:var(--bg);border-radius:8px;padding:8px;min-width:130px">
+        <b>${c.subject.toUpperCase()}</b><div class="small muted">Tiết ${c.period} · ${c.room||""}</div>
+        <div class="small">${c.teacher||""}</div>
+        ${"{{ user.role }}"==="admin"?`<button class="btn red sm" onclick="del(${c.id})">Xóa</button>`:""}</div>`:"<span class='muted'>—</span>"}</td>`;
+    }
+    html += "</tr>";
+  }
+  tb.innerHTML = html;
+}
+function showAdd(){
+  openModal(`<h3>Thêm tiết học</h3><div class="grid g2">
+    <select id="m_wd"><option value="0">Thứ 2</option><option value="1">Thứ 3</option><option value="2">Thứ 4</option><option value="3">Thứ 5</option><option value="4">Thứ 6</option><option value="5">Thứ 7</option></select>
+    <select id="m_p"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+    <input id="m_sj" placeholder="Môn học"><input id="m_gv" placeholder="Giáo viên">
+    <input id="m_rm" placeholder="Phòng"><input id="m_cls" value="${fcls.value}"></div>
+    <div style="display:grid;gap:8px;margin-top:12px">
+    <button class="btn" onclick="add()">Thêm</button><button class="btn ghost" onclick="closeModal()">Hủy</button></div>`);
+}
+async function add(){
+  const g=id=>document.getElementById(id).value;
+  const r = await api("/api/schedule","POST",{weekday:+g("m_wd"),period:+g("m_p"),subject:g("m_sj"),teacher:g("m_gv"),room:g("m_rm"),class_name:g("m_cls")});
+  if(r.ok){closeModal();load();} else toast("Lỗi","error");
+}
+async function del(id){ confirmModal("Xóa tiết học","Xóa tiết này khỏi thời khóa biểu?", async()=>{ await api("/api/schedule/"+id,"DELETE"); load(); }); }
+const tb=document.getElementById("tb"),fcls=document.getElementById("fcls");
+fcls.onchange=load; load();
+</script>
+{% endblock %}

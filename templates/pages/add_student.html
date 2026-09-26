@@ -1,0 +1,78 @@
+{% extends "layouts/base.html" %}{% block title %}Thêm học sinh{% endblock %}{% block crumb %}Thêm học sinh{% endblock %}
+{% block content %}
+<div class="grid g2">
+<div class="card"><h3>Thông tin học sinh</h3>
+<div class="grid" style="gap:10px">
+<input id="f_code" placeholder="Số báo danh (VD: HS001)">
+<input id="f_name" placeholder="Họ và tên">
+<select id="f_cls">{% for c in classes %}<option>{{ c }}</option>{% endfor %}</select>
+</div>
+<h3 style="margin-top:14px">Ảnh khuôn mặt</h3>
+<div class="cam" style="aspect-ratio:4/3;max-height:260px"><video id="v" autoplay muted playsinline></video></div>
+<div style="margin-top:10px">
+<button type="button" class="btn" style="width:100%" id="btnOpenCam" onclick="openCam()">Mở camera</button>
+<button type="button" class="btn green" style="width:100%;display:none" id="btnSnap" onclick="snap()">Chụp ảnh</button>
+</div>
+<div style="text-align:center;margin-top:6px"><span id="btnCloseCam" class="small muted" style="display:none;cursor:pointer;text-decoration:underline" onclick="closeCamOnly()">Đóng camera</span></div>
+<label style="display:block;margin-top:8px;border:1.5px dashed var(--border);border-radius:12px;padding:14px;text-align:center;cursor:pointer;color:var(--muted)">Hoặc tải ảnh lên từ máy<input type="file" id="f_file" accept="image/png,image/jpeg,image/webp" style="display:none"></label>
+<div style="display:flex;gap:12px;align-items:center">
+<img id="preview" style="width:96px;height:96px;border-radius:14px;object-fit:cover;border:1px solid var(--border);display:none">
+<span class="small muted" id="pmsg">Chụp hoặc tải ảnh khuôn mặt rõ, nhìn thẳng.</span>
+</div>
+<button class="btn" style="margin-top:14px;width:100%" onclick="save()">Lưu học sinh</button>
+<p class="small muted">Lưu đồng thời: hồ sơ + ảnh + dữ liệu nhận diện để điểm danh ngay.</p>
+</div>
+<div class="card"><h3>Danh sách (<span id="n">0</span>)</h3>
+<div class="tblwrap" style="border:0"><table style="min-width:0"><tbody id="tb"></tbody></table></div></div>
+</div>
+{% endblock %}{% block js %}
+<script>
+let blob=null, stream=null;
+const v=document.getElementById("v"),preview=document.getElementById("preview"),pmsg=document.getElementById("pmsg"),
+f_code=document.getElementById("f_code"),f_name=document.getElementById("f_name"),f_cls=document.getElementById("f_cls"),
+f_file=document.getElementById("f_file"),tb=document.getElementById("tb"),n=document.getElementById("n"),
+btnOpenCam=document.getElementById("btnOpenCam"),btnSnap=document.getElementById("btnSnap"),btnCloseCam=document.getElementById("btnCloseCam");
+async function openCam(){
+  try{stream=await navigator.mediaDevices.getUserMedia({video:true});v.srcObject=stream;await v.play().catch(()=>{});
+    btnOpenCam.style.display="none";btnSnap.style.display="block";btnCloseCam.style.display="inline";}
+  catch(e){toast("Không mở được camera: "+e.message,"error");}
+}
+function closeCamOnly(){
+  if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;v.srcObject=null;
+  btnOpenCam.style.display="block";btnSnap.style.display="none";btnCloseCam.style.display="none";
+}
+function setPreview(url){preview.src=url;preview.style.display="block";}
+function snap(){
+  if(!v.srcObject){toast("Mở camera trước.","error");return;}
+  const c=document.createElement("canvas");c.width=v.videoWidth;c.height=v.videoHeight;
+  c.getContext("2d").drawImage(v,0,0);
+  c.toBlob(b=>{blob=b;setPreview(URL.createObjectURL(b));pmsg.textContent="Đã chụp. Bấm Lưu học sinh.";closeCamOnly();},"image/jpeg",.85);
+}
+f_file.onchange=()=>{const f=f_file.files[0];if(!f)return;
+  if(f.size>2*1024*1024)return toast("Ảnh quá lớn (tối đa 2MB).","error");
+  blob=f;setPreview(URL.createObjectURL(f));pmsg.textContent="Đã chọn ảnh. Bấm Lưu học sinh.";};
+async function save(){
+  const code=f_code.value.trim().toUpperCase(), name=f_name.value.trim();
+  if(!code||!name)return toast("Nhập số báo danh và họ tên.","error");
+  if(!blob)return toast("Chưa có ảnh khuôn mặt.","error");
+  const fd=new FormData();fd.append("code",code);fd.append("full_name",name);fd.append("class_name",f_cls.value);fd.append("photo",blob,"face.jpg");
+  const r=await fetch("/api/students/with-photo",{method:"POST",body:fd});
+  if(r.status===401){location.href="/login";return;}
+  const j=await r.json();
+  toast(j.ok?"Đã thêm "+name+".":(j.msg||"Lỗi"),j.ok?"success":"error");
+  if(j.ok){f_code.value="";f_name.value="";blob=null;preview.style.display="none";load();}
+}
+async function load(){
+  tb.innerHTML=skeletonRows(3);
+  const list=await api("/api/students");
+  n.textContent=list.length;
+  tb.innerHTML=list.map(s=>`<tr><td><div class="cell-main">${s.photo?`<img src="/static/${s.photo}" style="width:40px;height:40px;border-radius:12px;object-fit:cover">`:avatarHTML(s.full_name,s.avatar_color||"#2563eb",40)}
+  <div><b>${s.full_name}</b><div class="small muted">SBD: ${s.code} · ${s.class_name}</div></div></div></td>
+  <td>${s.face_registered?'<span class="badge b-green">Đã ĐK mặt</span>':'<span class="badge b-red">Chưa ĐK</span>'}</td>
+  <td style="text-align:right"><button class="btn red sm" onclick="del('${s.code}')">Xóa</button></td></tr>`).join("")
+  ||`<tr><td>${emptyHTML("Chưa có học sinh","Thêm em đầu tiên ở form bên cạnh.")}</td></tr>`;
+}
+function del(code){confirmModal("Xóa học sinh",`Xóa <b>${code}</b> cùng ảnh và dữ liệu khuôn mặt?`,async()=>{await api("/api/students/"+code,"DELETE");load();});}
+load();
+</script>
+{% endblock %}

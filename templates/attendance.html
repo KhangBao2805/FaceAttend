@@ -1,0 +1,75 @@
+{% extends "base.html" %}{% block title %}Điểm danh{% endblock %}{% block content %}
+<h2>📷 Điểm danh bằng khuôn mặt</h2>
+<p class="muted">⚠️ Camera chỉ bật khi bạn bấm nút và cho phép trình duyệt. Dữ liệu khuôn mặt không hiển thị công khai.</p>
+<div class="grid g2">
+  <div class="card">
+    <div class="toolbar">
+      <select id="period">{% for p in periods %}<option value="{{ p.period }}">Tiết {{ p.period }} ({{ p.start_time }})</option>{% endfor %}</select>
+      <input id="subject" placeholder="Môn học (VD: Toán)" value="Toán">
+    </div>
+    <div class="cam-wrap"><video id="cam" autoplay muted playsinline></video><div class="scan" id="scan" style="display:none"></div></div>
+    <p class="muted" id="camStatus">📷 Camera: chưa bật</p>
+    <div class="toolbar">
+      <button class="btn green" onclick="start()">▶ Bắt đầu điểm danh</button>
+      <button class="btn ghost" onclick="stop()">⏹ Dừng</button>
+    </div>
+    <label class="muted"><input type="checkbox" id="mock" checked style="width:auto"> Dùng nhận diện giả lập (demo, không cần cài dlib)</label>
+  </div>
+  <div class="card">
+    <h3>Kết quả nhận diện</h3>
+    <div id="result" class="muted">Chưa có lượt quét nào. Bấm “Bắt đầu điểm danh”.</div>
+    <h3 style="margin-top:16px">Điểm danh thủ công</h3>
+    <div class="toolbar"><select id="manual">
+      {% for s in students %}<option value="{{ s.code }}">{{ s.code }} — {{ s.full_name }} ({{ s.class_name }})</option>{% endfor %}
+    </select><button class="btn" onclick="manualCheckin()">Ghi nhận</button></div>
+    <p class="muted">Chống điểm danh hộ: mỗi HS chỉ ghi 1 lần / tiết; camera + giáo viên giám sát trực tiếp.</p>
+  </div>
+</div>
+{% endblock %}{% block js %}
+<script>
+let stream = null, timer = null;
+async function start(){
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({video:true});
+    document.getElementById("cam").srcObject = stream;
+    document.getElementById("camStatus").textContent = "📷 Camera: đang bật — hãy nhìn thẳng vào camera";
+    document.getElementById("scan").style.display = "block";
+    toast("Camera đã bật. Quét mỗi 3 giây (giả lập).");
+    timer = setInterval(scan, 3000);
+  }catch(e){ toast("Không mở được camera: " + e.message); }
+}
+function stop(){
+  clearInterval(timer);
+  stream?.getTracks().forEach(t=>t.stop());
+  document.getElementById("camStatus").textContent = "📷 Camera: đã tắt";
+  document.getElementById("scan").style.display = "none";
+}
+async function scan(){
+  const p = document.getElementById("period").value;
+  const subj = document.getElementById("subject").value;
+  const box = document.getElementById("result");
+  if (document.getElementById("mock").checked){
+    // GIẢ LẬP: server chọn 1 HS chưa điểm danh tiết này
+    const r = await api("/api/face/recognize_mock", "POST", {date:"{{ today }}", period:+p});
+    if (!r.ok){ box.innerHTML = "🔴 " + r.msg; return; }
+    box.innerHTML = `🔍 Nhận diện: <b>${r.full_name}</b> (${r.student_code} • ${r.class_name})...`;
+    const c = await api("/api/attendance/checkin", "POST",
+      {student_code:r.student_code, date:"{{ today }}", period:+p, subject:subj, method:"face_mock"});
+    box.innerHTML = c.ok
+      ? `✅ <b>${c.msg}</b><br>Trạng thái: <b>${c.status}</b>`
+      : `⚠️ ${c.msg}`;
+  } else {
+    // THẬT (khi đã tích hợp embedding thật): gửi embedding lên /api/face/recognize
+    const emb = mockEmbedding(Date.now() + "");
+    const r = await api("/api/face/recognize", "POST", {embedding: emb});
+    box.innerHTML = r.ok ? "Nhận diện: " + r.student_code : "🔴 Không nhận diện được.";
+  }
+}
+async function manualCheckin(){
+  const c = await api("/api/attendance/checkin", "POST", {student_code:document.getElementById("manual").value,
+    date:"{{ today }}", period:+document.getElementById("period").value,
+    subject:document.getElementById("subject").value, method:"manual"});
+  toast(c.msg); document.getElementById("result").innerHTML = (c.ok?"✅ ":"⚠️ ") + c.msg;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}{% block title %}Lịch sử{% endblock %}{% block content %}
+<h2>📝 Lịch sử điểm danh</h2>
+<div class="toolbar">
+  <input type="date" id="d" value="{{ today }}"><select id="cls"><option value="">Tất cả lớp</option><option>12A1</option><option>12A2</option><option>11A1</option></select>
+  <select id="stt"><option value="">Mọi trạng thái</option><option>Có mặt</option><option>Đi trễ</option><option>Có phép</option></select>
+  <input id="q" placeholder="Mã / tên HS..."><button class="btn" onclick="load()">Lọc</button>
+  <a class="btn ghost" id="csv" href="#">⬇ CSV</a>
+</div>
+<div class="card"><table><thead><tr><th>Ngày</th><th>Họ tên</th><th>Lớp</th><th>Môn</th><th>Tiết</th><th>Giờ</th><th>Trạng thái</th></tr></thead>
+<tbody id="tb"></tbody></table></div>
+{% endblock %}{% block js %}
+<script>
+function badge(s){
+  if(s==="Có mặt")return'<span class="badge b-green">🟢 Có mặt</span>';
+  if(s==="Đi trễ")return'<span class="badge b-yellow">🟡 Đi trễ</span>';
+  if(s==="Có phép")return'<span class="badge b-blue">🔵 Có phép</span>';
+  return s;
+}
+async function load(){
+  const d=cls.value, c=cls.value, s=stt.value, q=qEl.value.toLowerCase();
+  const list = await api(`/api/attendance/list?date=${dEl.value}&class=${encodeURIComponent(c)}&status=${encodeURIComponent(s)}`);
+  const f = list.filter(r=>!q || (r.student_code+r.full_name).toLowerCase().includes(q));
+  tb.innerHTML = f.map(r=>`<tr><td>${r.date}</td><td><b>${r.full_name}</b><br><span class=muted>${r.student_code}</span></td>
+    <td>${r.class_name}</td><td>${r.subject||""}</td><td>${r.period}</td><td>${r.time||""}</td><td>${badge(r.status)}</td></tr>`).join("") || "<tr><td colspan=7>Không có dữ liệu.</td></tr>";
+  csv.href = "/lich-su/export?date=" + dEl.value;
+}
+const dEl=document.getElementById("d"),cls=document.getElementById("cls"),stt=document.getElementById("stt"),
+      qEl=document.getElementById("q"),tb=document.getElementById("tb"),csv=document.getElementById("csv");
+load();
+</script>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}{% block title %}Học sinh{% endblock %}{% block content %}
+<h2>👨‍🎓 Danh sách học sinh</h2>
+<div class="toolbar">
+  <input id="q" placeholder="🔍 Tìm mã / tên..." oninput="load()">
+  <select id="fclass" onchange="load()"><option value="">Tất cả lớp</option><option>12A1</option><option>12A2</option><option>11A1</option></select>
+  <button class="btn" onclick="showAdd()">＋ Thêm học sinh</button>
+</div>
+<div class="card"><table><thead><tr><th>STT</th><th>Mã HS</th><th>Họ tên</th><th>Lớp</th><th>Khuôn mặt</th><th>Hôm nay</th><th>Thao tác</th></tr></thead>
+<tbody id="tb"></tbody></table></div>
+<div class="card" id="form" style="display:none;margin-top:14px"><h3 id="ft">Thêm học sinh</h3>
+<div class="grid g3">
+<input id="code" placeholder="Mã HS (VD: HS021)"><input id="name" placeholder="Họ tên">
+<select id="cls"><option>12A1</option><option>12A2</option><option>11A1</option></select>
+<input id="dob" type="date"><select id="gender"><option>Nam</option><option>Nữ</option></select>
+<input id="phone" placeholder="SĐT"></div>
+<div class="toolbar" style="margin-top:10px"><button class="btn" onclick="save()">Lưu</button>
+<button class="btn ghost" onclick="document.getElementById('form').style.display='none'">Đóng</button></div></div>
+{% endblock %}{% block js %}
+<script>
+let editCode = null;
+function badge(s){
+  if (s === "Có mặt") return '<span class="badge b-green">🟢 Có mặt</span>';
+  if (s === "Đi trễ") return '<span class="badge b-yellow">🟡 Đi trễ</span>';
+  if (s === "Có phép") return '<span class="badge b-blue">🔵 Có phép</span>';
+  return '<span class="badge b-gray">Chưa điểm danh</span>';
+}
+async function load(){
+  const q = document.getElementById("q").value, c = document.getElementById("fclass").value;
+  const list = await api(`/api/students?q=${encodeURIComponent(q)}&class=${encodeURIComponent(c)}`);
+  document.getElementById("tb").innerHTML = list.map((s,i)=>`<tr><td>${i+1}</td><td><b>${s.code}</b></td>
+    <td>${s.full_name}</td><td>${s.class_name}</td>
+    <td>${s.face_registered?'<span class="badge b-green">Đã ĐK</span>':'<span class="badge b-red">Chưa ĐK</span>'}</td>
+    <td>${badge(s.today_status)}</td>
+    <td><button class="btn ghost" onclick='edit(${JSON.stringify(s)})'>Sửa</button>
+    <button class="btn red" onclick="del('${s.code}')">Xóa</button></td></tr>`).join("");
+}
+function showAdd(){ editCode=null; document.getElementById("ft").textContent="Thêm học sinh";
+  document.getElementById("form").style.display="block"; }
+function edit(s){ editCode=s.code; document.getElementById("form").style.display="block";
+  document.getElementById("ft").textContent="Sửa "+s.code;
+  code.value=s.code; name.value=s.full_name; cls.value=s.class_name; dob.value=s.dob||""; gender.value=s.gender||"Nam"; phone.value=s.phone||""; }
+async function save(){
+  const d = {code:code.value.trim().toUpperCase(), full_name:name.value.trim(), class_name:cls.value, dob:dob.value, gender:gender.value, phone:phone.value.trim()};
+  if (!d.code || !d.full_name) return toast("Nhập đủ Mã + Họ tên");
+  const r = editCode ? await api("/api/students/"+editCode, "PUT", d) : await api("/api/students", "POST", d);
+  toast(r.ok ? "Đã lưu." : (r.msg || "Lỗi")); load();
+}
+async function del(c){ if(!confirm("Xóa "+c+"?")) return; await api("/api/students/"+c, "DELETE"); load(); }
+load();
+</script>
+{% endblock %}

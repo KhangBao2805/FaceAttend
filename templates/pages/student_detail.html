@@ -1,0 +1,49 @@
+{% extends "layouts/base.html" %}{% block title %}Hồ sơ học sinh{% endblock %}{% block crumb %}Học sinh / {{ code }}{% endblock %}
+{% block content %}
+<div id="wrap"><div class="card"><div class="skel">&nbsp;</div></div></div>
+{% endblock %}{% block js %}
+<script>
+(async()=>{
+  const s = await api("/api/students/{{ code }}");
+  if (!s.code){ wrap.innerHTML = emptyHTML("Không tìm thấy học sinh",""); return; }
+  wrap.innerHTML = `<div class="grid g2" style="grid-template-columns:1fr 2fr">
+    <div class="card" style="text-align:center">
+      ${avatarHTML(s.full_name, s.avatar_color, 76)}
+      <h2 style="margin-top:10px">${s.full_name}</h2>
+      <div class="muted">Mã HS: <b>{{ code }}</b> · Lớp <b>${s.class_name}</b></div>
+      <div style="margin-top:8px">${s.face_registered?'<span class="badge b-green">Đã ĐK khuôn mặt</span>':'<span class="badge b-red">Chưa ĐK khuôn mặt</span>'} ${statusBadge("")}</div>
+      <div class="toolbar" style="justify-content:center;margin-top:12px">
+        <button class="btn soft sm" onclick="location.href='/dang-ky-khuon-mat?code={{ code }}'">${s.face_registered?"Cập nhật Face":"Đăng ký Face"}</button>
+        ${s.face_registered?`<button class="btn ghost sm" onclick="delFace()">Xóa Face</button>`:""}
+      </div>
+      <div style="text-align:left;margin-top:8px" class="small">
+        <div>🎂 Ngày sinh: <b>${s.dob||"—"}</b></div><div>⚧ Giới tính: <b>${s.gender||"—"}</b></div>
+        <div>✉️ Email: <b>${s.email||"—"}</b></div><div>📞 SĐT phụ huynh: <b>${s.parent_phone||s.phone||"—"}</b></div>
+        <div>📅 Ngày nhập học: <b>${s.enroll_date||"—"}</b></div></div>
+    </div>
+    <div>
+      <div class="grid g4">
+        <div class="card"><div class="muted small">Attendance rate</div><div class="stat-v">${s.stats.rate}%</div></div>
+        <div class="card"><div class="muted small">Present</div><div class="stat-v">${s.stats.present}</div></div>
+        <div class="card"><div class="muted small">Late</div><div class="stat-v">${s.stats.late}</div></div>
+        <div class="card"><div class="muted small">Absent</div><div class="stat-v">${s.stats.absent}</div></div>
+      </div>
+      <div class="card" style="margin-top:16px"><h3>Lịch sử điểm danh (14 buổi gần nhất)</h3><canvas id="ch" height="110"></canvas></div>
+      <div class="card" style="margin-top:16px"><h3>Bản ghi gần đây</h3>
+        <div class="tblwrap" style="border:0"><table style="min-width:0"><tbody>
+        ${s.recent.map(r=>`<tr><td>${r.date}</td><td>Tiết ${r.period} · ${r.subject||""}</td><td>${r.time||""}</td><td>${statusBadge(r.status)}</td></tr>`).join("")}
+        </tbody></table></div></div>
+    </div></div>`;
+  const val = {"Có mặt":2, "Đi trễ":1, "Có phép":1};
+  new Chart(ch, {type:"bar", data:{labels:s.series.map(x=>x.d),
+    datasets:[{label:"Mức chuyên cần", data:s.series.map(x=>val[x.s]||0)}]},
+    options:{plugins:{legend:{display:false}}, scales:{y:{min:0,max:2,ticks:{stepSize:1}}}}});
+})();
+async function delFace(){
+  confirmModal("Xóa dữ liệu khuôn mặt","Học sinh sẽ phải đăng ký lại để điểm danh bằng camera.", async()=>{
+    await api("/api/face/delete/{{ code }}","POST"); location.reload();
+  });
+}
+const wrap=document.getElementById("wrap");
+</script>
+{% endblock %}

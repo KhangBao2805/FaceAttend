@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% block title %}Tài khoản{% endblock %}{% block content %}
+<h2>👤 Quản lý tài khoản (Admin)</h2>
+<div class="card"><table><thead><tr><th>Tên đăng nhập</th><th>Họ tên</th><th>Vai trò</th><th>Liên kết HS</th></tr></thead><tbody id="tb"></tbody></table></div>
+<div class="card" style="margin-top:14px"><h3>Tạo tài khoản</h3>
+<div class="grid g3"><input id="u" placeholder="Tên đăng nhập"><input id="p" placeholder="Mật khẩu"><select id="r"><option value="teacher">Giáo viên</option><option value="admin">Admin</option><option value="student">Học sinh</option></select></div>
+<div class="grid g2" style="margin-top:8px"><input id="fn" placeholder="Họ tên"><input id="lk" placeholder="Mã HS liên kết (nếu role=student)"></div>
+<button class="btn" style="margin-top:10px" onclick="add()">Tạo</button></div>
+{% endblock %}{% block js %}
+<script>
+async function load(){ const l=await api("/api/users");
+  tb.innerHTML=l.map(u=>`<tr><td><b>${u.username}</b></td><td>${u.full_name||""}</td><td>${u.role}</td><td>${u.linked_student_code||""}</td></tr>`).join(""); }
+async function add(){ const r=await api("/api/users","POST",{username:u.value,password:p.value,role:rEl.value,full_name:fn.value,linked_student_code:lk.value});
+  toast(r.ok?"Đã tạo.":(r.msg||"Lỗi")); load(); }
+const tb=document.getElementById("tb"),u=document.getElementById("u"),p=document.getElementById("p"),
+      rEl=document.getElementById("r"),fn=document.getElementById("fn"),lk=document.getElementById("lk");
+load();
+</script>
+{% endblock %}

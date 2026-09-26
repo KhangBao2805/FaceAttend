@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FaceAttend · Điểm danh khuôn mặt</title>
+<style>
+:root{--bg:#eef3fa;--card:#fff;--text:#0f1e33;--muted:#64748b;--border:#e2e9f4;--primary:#2563eb;--primary2:#1d4ed8;--accent:#7c3aed;--primary-soft:#e8effd;--green:#16a34a;--green2:#0d9668;--green-soft:#e2f7ec;--amber:#d97706;--amber-soft:#fdf3e3;--r:18px;--shadow:0 1px 2px rgba(16,24,40,.06),0 8px 24px rgba(37,99,235,.10)}
+*{box-sizing:border-box}body{margin:0;color:var(--text);font-family:"Segoe UI",Roboto,Arial,sans-serif;font-size:15px;
+background:radial-gradient(600px 300px at 10% 0%,rgba(37,99,235,.10),transparent),radial-gradient(500px 260px at 95% 10%,rgba(124,58,237,.10),transparent),var(--bg)}
+[data-theme=dark]{--bg:#0a1020;--card:#121b31;--text:#e7eefb;--muted:#8ea0bf;--border:#22304d;--primary:#3b82f6;--primary2:#60a5fa;--primary-soft:#16294d;--green-soft:#123527;--amber-soft:#3a2a12}
+.header{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:12px 22px;background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.header::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:linear-gradient(90deg,var(--primary),var(--accent),transparent)}
+.logo{display:flex;gap:10px;align-items:center;font-weight:800;font-size:19px;letter-spacing:-.01em}
+.logo-mark{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(37,99,235,.4)}
+.content{padding:22px;max-width:1100px;margin:0 auto}
+.grid{display:grid;gap:16px}.g2{grid-template-columns:1.4fr 1fr}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;box-shadow:var(--shadow);animation:rise .35s ease}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+h3{margin-top:0;letter-spacing:-.01em}
+.muted{color:var(--muted)}.small{font-size:12.5px}
+.badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600}
+.b-green{background:var(--green-soft);color:var(--green)}.b-amber{background:var(--amber-soft);color:var(--amber)}.b-blue{background:var(--primary-soft);color:var(--primary)}
+.avatar{width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px}
+.cell-main{display:flex;gap:10px;align-items:center}
+.btn{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;border:0;border-radius:12px;padding:10px 20px;font-weight:700;cursor:pointer;font-family:inherit;font-size:14px;box-shadow:0 4px 14px rgba(37,99,235,.35);transition:transform .12s,box-shadow .12s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(37,99,235,.45)}
+.btn:active{transform:scale(.97)}
+.btn.ghost{background:var(--card);color:var(--text);border:1px solid var(--border);box-shadow:none}
+.btn.green{background:linear-gradient(135deg,var(--green),var(--green2));box-shadow:0 4px 14px rgba(22,163,74,.35)}
+input,select{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:9px 12px;font:inherit}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}.toolbar input,.toolbar select{flex:1;min-width:140px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}th,td{padding:10px;border-bottom:1px solid var(--border);text-align:left}
+.cam{position:relative;border-radius:var(--r);overflow:hidden;background:#0b0f1a;aspect-ratio:4/3}
+.cam video{width:100%;height:100%;object-fit:cover;display:block}
+.face-frame{display:none}
+.corners{position:absolute;inset:9%;pointer-events:none}
+.corners i{position:absolute;width:34px;height:34px;border:3px solid #4ade80;filter:drop-shadow(0 0 6px #4ade80)}
+.corners .tl{top:0;left:0;border-right:0;border-bottom:0;border-radius:10px 0 0 0}
+.corners .tr{top:0;right:0;border-left:0;border-bottom:0;border-radius:0 10px 0 0}
+.corners .bl{bottom:0;left:0;border-right:0;border-top:0;border-radius:0 0 0 10px}
+.corners .br{bottom:0;right:0;border-left:0;border-top:0;border-radius:0 0 10px 0}
+.scanline{position:absolute;left:10%;right:10%;height:3px;border-radius:99px;background:linear-gradient(90deg,transparent,#4ade80,transparent);box-shadow:0 0 16px #4ade80;animation:scan 2.2s ease-in-out infinite}
+@keyframes scan{0%,100%{top:12%}50%{top:86%}}
+.hint{position:absolute;bottom:10px;left:0;right:0;text-align:center;color:#fff;font-size:13px;text-shadow:0 1px 4px #000}
+.camerr{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:#fff;background:rgba(0,0,0,.6);font-size:13px;padding:24px;text-align:center}
+.empty{text-align:center;padding:36px;color:var(--muted)}
+.pop{animation:pop .4s ease}
+@keyframes pop{0%{transform:scale(.9);opacity:0}60%{transform:scale(1.03)}100%{transform:scale(1)}}
+#sessStat{display:inline-block;background:var(--primary-soft);color:var(--primary);font-weight:600;border-radius:99px;padding:6px 14px;margin-top:8px}
+#result .ok-photo{width:84px;height:84px;border-radius:50%;object-fit:cover;border:4px solid var(--green-soft);box-shadow:0 0 0 4px rgba(22,163,74,.25)}
+@media(max-width:900px){.g2{grid-template-columns:1fr}.content{padding:14px}}
+</style>
+</head>
+<body>
+<div class="header">
+<div class="logo"><span class="logo-mark">◉</span> FaceAttend <span class="muted small" id="today"></span></div>
+<div><a href="giao-vien.html" class="btn ghost" style="text-decoration:none">Giáo viên</a>
+<button class="btn ghost" onclick="toggleTheme()">Dark/Light</button></div>
+</div>
+<div class="content">
+<div class="card" style="margin-bottom:16px"><div class="toolbar" style="margin:0">
+<select id="cls"></select><input id="subject" value="Tin Học"><select id="period"></select>
+</div><div class="small muted" id="sessStat" style="margin-top:8px"></div></div>
+<div class="grid g2">
+<div class="card"><h3 style="margin-top:0">Camera <span class="muted small" id="camState">· chưa bật</span></h3>
+<div class="cam"><video id="cam" autoplay muted playsinline></video>
+<div class="scanline" id="scan" style="display:none"></div>
+<div class="corners"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
+<div class="hint">Đưa khuôn mặt vào khung</div>
+<div class="camerr" id="camErr" style="display:none"></div></div>
+<div class="toolbar" style="margin:12px 0 0"><button class="btn green" id="btnStart" onclick="startCam()">Bắt đầu điểm danh</button><button class="btn ghost" onclick="stopCam()">Dừng</button></div>
+</div>
+<div class="card"><h3 style="margin-top:0">Kết quả</h3><div id="result" class="muted">Bấm “Bắt đầu điểm danh” và nhìn vào camera.</div></div>
+</div>
+<div class="card" style="margin-top:16px"><h3 style="margin-top:0">Đã điểm danh (<span id="sessN">0</span>)</h3>
+<table><tbody id="sessList"></tbody></table></div>
+</div>
+<script>
+// ===== Trang điểm danh công cộng: KHÔNG đăng nhập =====
+document.documentElement.dataset.theme = localStorage.getItem("fa-theme") || "light";
+function toggleTheme(){const t=document.documentElement.dataset.theme==="light"?"dark":"light";document.documentElement.dataset.theme=t;localStorage.setItem("fa-theme",t);}
+let S=[], ATT=[];
+try{const d=JSON.parse(localStorage.getItem("fa-data")||"{}");S=d.students||[];ATT=d.attendance||[];}catch(e){}
+function save(){try{localStorage.setItem("fa-data",JSON.stringify({students:S,attendance:ATT}));}catch(e){}}
+const byCode=Object.fromEntries(S.map(s=>[s.code,s]));
+const todayISO=new Date().toISOString().slice(0,10);
+today.textContent=new Date().toLocaleDateString("vi-VN",{weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"});
+const av=(n,c)=>`<span class="avatar" style="background:${c}">${(n||"?").trim().split(/\s+/).slice(-2).map(w=>w[0]).join("").toUpperCase()}</span>`;
+const badge=s=>s==="Có mặt"?'<span class="badge b-green">Có mặt</span>':s==="Đi trễ"?'<span class="badge b-amber">Đi trễ</span>':'<span class="badge b-blue">Có phép</span>';
+// Tiết học
+const PERIODS=[["1","07:00"],["2","07:50"],["3","08:40"],["4","09:40"],["5","10:30"]];
+period.innerHTML=PERIODS.map(p=>`<option value="${p[0]}">Tiết ${p[0]} · ${p[1]}</option>`).join("");
+function refreshCls(){const cs=[...new Set(S.map(s=>s.cls))];cls.innerHTML=cs.map(c=>`<option>${c}</option>`).join("")||`<option value="">(chưa có lớp)</option>`;}
+refreshCls();
+// Camera + quét giả lập
+let stream=null,timer=null;
+const done=new Set(ATT.filter(a=>a.date===todayISO).map(a=>a.code));
+async function startCam(){camErr.style.display="none";
+try{stream=await navigator.mediaDevices.getUserMedia({video:true});cam.srcObject=stream;await cam.play().catch(()=>{});}
+catch(e){camErr.textContent="Không mở được camera ("+e.message+"). Hãy bấm Cho phép khi trình duyệt hỏi.";camErr.style.display="flex";}
+camState.textContent="· đang quét";scan.style.display="block";clearInterval(timer);timer=setInterval(doScan,3000);doScan();}
+function stopCam(){clearInterval(timer);if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;camState.textContent="· đã tắt";scan.style.display="none";}
+function doScan(){
+if(!S.length){result.innerHTML=`<div class="empty">📭<br><b>Chưa có học sinh</b><div class="small">Nhờ giáo viên thêm danh sách.</div></div>`;stopCam();return;}
+const cands=S.filter(s=>s.face&&!done.has(s.code));
+if(!cands.length){const anyFace=S.some(s=>s.face);
+result.innerHTML=anyFace?`<div class="empty"><b>Tất cả đã điểm danh xong.</b></div>`:`<div class="empty">📷<br><b>Chưa có học sinh nào đăng ký khuôn mặt</b></div>`;stopCam();return;}
+const s=cands[Math.floor(Math.random()*cands.length)];done.add(s.code);
+const late=Math.random()<.15, t=late?"07:0"+(6+Math.floor(Math.random()*8)):"07:0"+(1+Math.floor(Math.random()*4));
+const st=late?"Đi trễ":"Có mặt";ATT.push({date:todayISO,code:s.code,time:t,status:st,period:period.value,subject:subject.value});save();
+const photo=s.face?`<img class="ok-photo" src="${s.face}">`:av(s.name,s.color);
+result.innerHTML=`<div class="pop" style="text-align:center">${photo}<div style="font-weight:800;font-size:19px;margin-top:8px">Xin chào, ${s.name}!</div><div class="muted small">${s.code} · ${s.cls}</div><div style="margin-top:8px">${badge(st)} <span class="badge b-green">Điểm danh thành công lúc ${t}</span></div></div>`;
+loadSession();}
+function loadSession(){
+const recs=[...done].map(c=>byCode[c]).filter(Boolean);
+sessN.textContent=recs.length;
+sessStat.textContent=`Lớp ${cls.value||"—"} · ${subject.value} · Tiết ${period.value} · Đã điểm danh ${recs.length}/${S.length} học sinh`;
+sessList.innerHTML=recs.map(s=>{const a=[...ATT].reverse().find(x=>x.date===todayISO&&x.code===s.code)||{};return `<tr><td><div class="cell-main">${s.face?`<img src="${s.face}" style="width:32px;height:32px;border-radius:50%;object-fit:cover">`:av(s.name,s.color)}<div><b>${s.name}</b><div class="small muted">${s.code} · ${s.cls}</div></div></div></td><td>${a.time||""}</td><td>${badge(a.status||"Có mặt")}</td></tr>`;}).join("")||`<tr><td><div class="empty">📭<br><b>Chưa có lượt điểm danh</b></div></td></tr>`;}
+const today=document.getElementById("today"),cls=document.getElementById("cls"),subject=document.getElementById("subject"),
+period=document.getElementById("period"),sessStat=document.getElementById("sessStat"),cam=document.getElementById("cam"),
+camState=document.getElementById("camState"),scan=document.getElementById("scan"),camErr=document.getElementById("camErr"),
+result=document.getElementById("result"),sessN=document.getElementById("sessN"),sessList=document.getElementById("sessList");
+cls.onchange=loadSession;period.onchange=loadSession;loadSession();
+</script>
+</body>
+</html>

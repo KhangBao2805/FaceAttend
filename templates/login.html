@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Đăng nhập — THPT</title>
+<style>
+body{margin:0;font-family:"Be Vietnam Pro","Segoe UI",Arial;display:flex;min-height:100vh;
+ background:linear-gradient(135deg,#1d4ed8,#3b82f6 60%,#93c5fd);align-items:center;justify-content:center;padding:16px}
+.box{background:#fff;border-radius:22px;padding:34px;width:400px;max-width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25);animation:p .4s ease}
+@keyframes p{from{opacity:0;transform:translateY(10px)}}
+h1{margin:0 0 4px;color:#1d4ed8}.muted{color:#64748b;font-size:13px}
+input{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:12px;margin-top:10px;box-sizing:border-box}
+button{width:100%;margin-top:14px;background:#2563eb;color:#fff;border:0;border-radius:12px;padding:12px;font-weight:700;cursor:pointer}
+.err{background:#fee2e2;color:#991b1b;border-radius:10px;padding:10px;margin-top:10px;font-size:14px}
+.demo{background:#eff6ff;border-radius:10px;padding:10px;margin-top:12px;font-size:13px;color:#1e40af}
+</style></head>
+<body><div class="box">
+<h1>🏫 Đăng nhập</h1><div class="muted">Hệ thống điểm danh khuôn mặt — Trường THPT Nguyễn Du - Ninh Sơn</div>
+{% if err %}<div class="err">{{ err }}</div>{% endif %}
+<form method="post"><input name="username" placeholder="Tên đăng nhập" required>
+<input name="password" type="password" placeholder="Mật khẩu" required>
+<button>Đăng nhập</button></form>
+<div class="demo">Demo: <b>admin/admin123</b> (quản trị) • <b>gv_an/gv123</b> (giáo viên) • <b>hs001/hs123</b> (học sinh)</div>
+</div></body></html>

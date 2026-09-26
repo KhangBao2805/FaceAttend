@@ -1,0 +1,34 @@
+{% extends "base.html" %}{% block title %}Dashboard{% endblock %}{% block content %}
+<h2>🏠 Dashboard <span class="muted">ngày {{ today }}</span></h2>
+<div class="toolbar"><input type="date" id="d" value="{{ today }}"><button class="btn" onclick="load()">Xem</button></div>
+<div class="grid g4" id="stats"></div>
+<div class="grid g2" style="margin-top:16px">
+  <div class="card"><h3>📈 Chuyên cần 7 ngày</h3><canvas id="c1" height="140"></canvas></div>
+  <div class="card"><h3>ℹ️ Hướng dẫn nhanh</h3>
+    <p class="muted">1. Vào <b>📷 Điểm danh</b> → chọn Tiết → <b>Bắt đầu điểm danh</b> → cho phép camera.<br>
+    2. Bản demo dùng <b>nhận diện giả lập</b> (không cần cài dlib). Muốn nhận diện thật, xem file <b>face_recognition/service.py</b>.<br>
+    3. Học sinh mới: <b>Học sinh → Thêm</b> rồi <b>Đăng ký khuôn mặt</b> (cần tick đồng ý).</p>
+    <p><span class="badge b-green">🟢 Có mặt</span> <span class="badge b-yellow">🟡 Đi trễ</span>
+    <span class="badge b-red">🔴 Vắng</span> <span class="badge b-blue">🔵 Có phép</span></p></div>
+</div>
+{% endblock %}{% block js %}
+<script>
+let chart;
+async function load(){
+  const d = document.getElementById("d").value;
+  const s = await api("/api/dashboard?date=" + d);
+  const card = (t,v,c)=>`<div class="card"><div class="muted">${t}</div><div class="stat">${v}</div></div>`;
+  document.getElementById("stats").innerHTML =
+    card("👨‍🎓 Tổng số học sinh", s.total) + card("✅ Đã điểm danh", s.checked) +
+    card("🟡 Đi trễ", s.late) + card("🔴 Vắng", s.absent) +
+    card("🔵 Có phép", s.leave) + card("📊 Tỷ lệ chuyên cần", s.rate + "%") +
+    card("🟢 Có mặt đúng giờ", s.present) + card("📅 Ngày", d);
+  const ctx = document.getElementById("c1");
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {type:"bar",
+    data:{labels:s.chart.map(x=>x.date), datasets:[{label:"Lượt có mặt", data:s.chart.map(x=>x.present)}]},
+    options:{plugins:{legend:{display:false}}}});
+}
+load();
+</script>
+{% endblock %}

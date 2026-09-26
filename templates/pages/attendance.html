@@ -1,0 +1,96 @@
+{% extends "layouts/base.html" %}{% block title %}Điểm danh{% endblock %}{% block crumb %}Điểm danh{% endblock %}
+{% block content %}
+<div class="grid g2" style="grid-template-columns:1.4fr 1fr">
+  <div class="card">
+    <h3>📷 Camera <span class="muted small" id="camState">· chưa bật</span></h3>
+    <div class="cam">
+      <video id="cam" muted playsinline></video>
+      <div class="overlay" id="overlay"><div class="face-frame"></div></div>
+      <div class="scanline" id="scanline" style="display:none"></div>
+      <div class="hint">Đưa khuôn mặt vào khung</div>
+    </div>
+    <div class="toolbar" style="margin:12px 0 0">
+      <button class="btn green" id="btnStart" onclick="start()">Bắt đầu</button>
+      <button class="btn ghost" onclick="stop()">Dừng</button>
+    </div>
+    <label class="small muted"><input type="checkbox" id="mock" checked style="width:auto"> Nhận diện giả lập (demo, không cần model)</label>
+  </div>
+  <div>
+    <div class="card"><h3>Attendance Session</h3>
+      <div class="grid g2">
+        <div><div class="small muted">Ngày</div><b>{{ today }}</b></div>
+        <div><div class="small muted">Thời gian hiện tại</div><b id="clock"></b></div>
+      </div>
+      <div class="grid g3" style="margin-top:10px">
+        <select id="cls"><option>12A1</option><option>12A2</option><option>12A3</option></select>
+        <input id="subject" value="Tin Học">
+        <select id="period">{% for p in periods %}<option value="{{ p.period }}">Tiết {{ p.period }} · {{ p.start_time }}</option>{% endfor %}</select>
+      </div>
+      <div class="small muted" style="margin-top:10px" id="sessStat">—</div>
+    </div>
+    <div class="card" style="margin-top:16px;min-height:200px" id="resultCard">
+      <h3>Kết quả</h3>
+      <div id="result" class="muted">Bấm “Bắt đầu” và cho phép camera. Hệ thống quét mỗi 3 giây.</div>
+    </div>
+  </div>
+</div>
+<div class="card" style="margin-top:16px"><h3>Đã điểm danh tiết này (<span id="sessN">0</span>/<span id="sessT">0</span>)</h3>
+  <div class="tblwrap" style="border:0"><table style="min-width:0"><tbody id="sessList"></tbody></table></div></div>
+{% endblock %}{% block js %}
+<script>
+let timer = null;
+setInterval(() => clock.textContent = new Date().toLocaleTimeString("vi-VN"), 1000);
+async function start(){
+  try{
+    await CameraScanner.start(document.getElementById("cam"));
+    camState.textContent = "· đang quét"; scanline.style.display = "block";
+    btnStart.disabled = true; toast("Camera đã bật. Đưa khuôn mặt vào khung.");
+    timer = setInterval(scan, 3000); scan();
+  }catch(e){ toast("Không mở được camera: " + e.message, "error"); }
+}
+function stop(){
+  clearInterval(timer); CameraScanner.stop();
+  camState.textContent = "· đã tắt"; scanline.style.display = "none"; btnStart.disabled = false;
+}
+async function scan(){
+  const p = period.value, subj = subject.value;
+  const box = document.getElementById("result");
+  if (!mock.checked){ box.innerHTML = `<div class="spin"></div><div class="small muted" style="text-align:center">Cần model thật — hãy bật giả lập để demo.</div>`; return; }
+  box.innerHTML = `<div class="spin"></div><div class="small muted" style="text-align:center">Đang quét khuôn mặt…</div>`;
+  const r = await api("/api/face/recognize_mock", "POST", {date:"{{ today }}", period:+p});
+  if (!r.ok){ box.innerHTML = `<div class="empty"><div class="big">🔍</div><b>${r.msg}</b></div>`; loadSession(); return; }
+  const c = await api("/api/attendance/checkin", "POST",
+    {student_code:r.student_code, date:"{{ today }}", period:+p, subject:subj, method:"face_mock"});
+  if (c.ok){
+    document.getElementById("resultCard").classList.remove("result-ok");
+    void document.getElementById("resultCard").offsetWidth;
+    document.getElementById("resultCard").classList.add("result-ok");
+    box.innerHTML = `<div style="text-align:center;padding:8px">
+      ${avatarHTML(c.full_name, "#16a34a", 64)}
+      <div style="font-size:17px;font-weight:800;margin-top:8px">${c.full_name}</div>
+      <div class="muted">${r.student_code} · ${c.class_name}</div>
+      <div style="margin-top:8px">${statusBadge(c.status)} <span class="badge b-green">✓ Đã điểm danh · ${c.time}</span></div></div>`;
+    toast(`✓ ${c.full_name} — đã điểm danh lúc ${c.time}`, "success");
+  } else {
+    box.innerHTML = `<div class="empty"><div class="big">ℹ️</div><b>${c.msg}</b><div class="small">${c.detail||""}</div></div>`;
+  }
+  loadSession();
+}
+async function loadSession(){
+  const s = await api(`/api/attendance/session?date={{ today }}&period=${period.value}`);
+  sessN.textContent = s.checked; sessT.textContent = s.total;
+  sessStat.textContent = `Đã điểm danh ${s.checked}/${s.total} học sinh · Tiết ${period.value} · ${subject.value}`;
+  sessList.innerHTML = s.records.map(r=>`<tr><td><div class="cell-main">${avatarHTML(r.full_name,"#2563eb")}
+    <div><b>${r.full_name}</b><div class="small muted">${r.student_code} · ${r.class_name}</div></div></div></td>
+    <td>${r.time||""}</td><td>${statusBadge(r.status)}</td></tr>`).join("")
+    || emptyHTML("Chưa có dữ liệu điểm danh", "Bắt đầu quét để ghi nhận.");
+}
+const camState=document.getElementById("camState"),scanline=document.getElementById("scanline"),
+      btnStart=document.getElementById("btnStart"),period=document.getElementById("period"),
+      subject=document.getElementById("subject"),mock=document.getElementById("mock"),
+      sessList=document.getElementById("sessList"),sessN=document.getElementById("sessN"),
+      sessT=document.getElementById("sessT"),sessStat=document.getElementById("sessStat"),
+      clock=document.getElementById("clock");
+period.onchange = loadSession; loadSession();
+</script>
+{% endblock %}

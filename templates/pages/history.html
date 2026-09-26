@@ -1,0 +1,28 @@
+{% extends "layouts/base.html" %}{% block title %}Lịch sử{% endblock %}{% block crumb %}Lịch sử điểm danh{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <input type="date" id="f" value="{{ today }}"><input type="date" id="t" value="{{ today }}">
+  <select id="cls"><option value="">Tất cả lớp</option><option>12A1</option><option>12A2</option><option>12A3</option></select>
+  <select id="stt"><option value="">Mọi trạng thái</option><option>Có mặt</option><option>Đi trễ</option><option>Có phép</option></select>
+  <input id="q" placeholder="Mã / tên HS...">
+  <button class="btn" onclick="load()">Lọc</button>
+  <a class="btn ghost" href="/history/export">⬇ CSV</a>
+  <a class="btn ghost" href="/history/export-xlsx">⬇ Excel</a>
+</div>
+<div class="tblwrap"><table><thead><tr><th>Ngày</th><th>Học sinh</th><th>Lớp</th><th>Môn</th><th>Tiết</th><th>Giờ</th><th>Trạng thái</th></tr></thead>
+<tbody id="tb"></tbody></table></div>
+{% endblock %}{% block js %}
+<script>
+async function load(){
+  tb.innerHTML = skeletonRows(6);
+  const list = await api(`/api/attendance/list?from=${f.value}&to=${t.value}&class=${cls.value}&status=${stt.value}&q=${encodeURIComponent(q.value)}`);
+  tb.innerHTML = list.map(r=>`<tr><td>${r.date}</td>
+    <td><div class="cell-main">${avatarHTML(r.full_name,"#2563eb")}<div><b>${r.full_name}</b><div class="small muted">${r.student_code}</div></div></div></td>
+    <td>${r.class_name}</td><td>${r.subject||""}</td><td>${r.period}</td><td>${r.time||""}</td><td>${statusBadge(r.status)}</td></tr>`).join("")
+    || `<tr><td colspan="7">${emptyHTML("Chưa có dữ liệu điểm danh","Thử thay đổi bộ lọc hoặc khoảng thời gian.")}</td></tr>`;
+}
+const f=document.getElementById("f"),t=document.getElementById("t"),cls=document.getElementById("cls"),
+      stt=document.getElementById("stt"),q=document.getElementById("q"),tb=document.getElementById("tb");
+load();
+</script>
+{% endblock %}
