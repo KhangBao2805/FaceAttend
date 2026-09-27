@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tạo Admin đầu tiên · FaceAttend</title>
+<style>
+body{margin:0;font-family:"Segoe UI",Arial;display:flex;min-height:100vh;background:#0f1e33;align-items:center;justify-content:center;padding:16px}
+.box{background:#fff;border-radius:18px;padding:30px;width:380px;max-width:100%}
+h2{margin:0 0 4px}.muted{color:#64748b;font-size:13px}
+input{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:10px;margin-top:10px;box-sizing:border-box}
+button{width:100%;margin-top:14px;background:#2563eb;color:#fff;border:0;border-radius:10px;padding:12px;font-weight:700;cursor:pointer}
+.err{background:#fee2e2;color:#991b1b;border-radius:10px;padding:10px;margin-top:10px;font-size:14px}
+</style></head>
+<body><div class="box">
+<h2>Tạo Admin đầu tiên</h2><div class="muted">Chỉ dùng được khi web chưa có tài khoản nào.</div>
+{% if err %}<div class="err">{{ err }}</div>{% endif %}
+<form method="post"><input name="full_name" placeholder="Họ tên">
+<input name="username" placeholder="Tên đăng nhập" required>
+<input name="password" type="password" placeholder="Mật khẩu" required>
+<button>Tạo tài khoản</button></form>
+</div></body></html>
