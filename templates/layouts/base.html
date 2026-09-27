@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>{% block title %}Dashboard{% endblock %} · FaceAttend</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/design.css') }}?v=4">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/design.css') }}?v=5">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -54,7 +54,7 @@
   <a href="/lich-su" class="{% if active=='history' %}active{% endif %}"><span class="ic">📝</span>Lịch sử</a>
   <a href="/thong-ke" class="{% if active=='stats' %}active{% endif %}"><span class="ic">📊</span>TK</a>
 </nav>
-<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}?v=2"></script>
 <script>
 document.getElementById("hdrAvatar").innerHTML =
   avatarHTML("{{ user.name }}", "#2563eb");
