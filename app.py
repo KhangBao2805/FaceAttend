@@ -76,8 +76,11 @@ def init_db():
     db.close()
 
 
+# Khởi tạo database khi Flask được chạy bằng Gunicorn/Render
+init_db()
+
+
 if __name__ == "__main__":
-    init_db()
     print("=" * 55)
     print("  FaceAttend — http://127.0.0.1:5000")
     print("  admin/admin123 | gv_an/gv123 | hs001/hs123")
