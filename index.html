@@ -79,7 +79,7 @@ try{const d=JSON.parse(localStorage.getItem("fa-data")||"{}");S=d.students||[];A
 function save(){try{localStorage.setItem("fa-data",JSON.stringify({students:S,attendance:ATT}));}catch(e){}}
 const byCode=Object.fromEntries(S.map(s=>[s.code,s]));
 const todayISO=new Date().toISOString().slice(0,10);
-today.textContent=new Date().toLocaleDateString("vi-VN",{weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"});
+today.textContent=todayISO+" · Trường THPT Nguyễn Du - Ninh Sơn";
 const av=(n,c)=>`<span class="avatar" style="background:${c}">${(n||"?").trim().split(/\s+/).slice(-2).map(w=>w[0]).join("").toUpperCase()}</span>`;
 const badge=s=>s==="Có mặt"?'<span class="badge b-green">Có mặt</span>':s==="Đi trễ"?'<span class="badge b-amber">Đi trễ</span>':'<span class="badge b-blue">Có phép</span>';
 const PERIODS=[["1","07:00"],["2","07:50"],["3","08:40"],["4","09:40"],["5","10:30"]];
