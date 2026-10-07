@@ -5,3 +5,4 @@ static/uploads/
 *.log
 cloudflared.exe
 .env
+attendance-face/
